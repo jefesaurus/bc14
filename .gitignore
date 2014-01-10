@@ -4,3 +4,9 @@
 *.jar
 *.war
 *.ear
+
+# Do upload the lib's
+!battlecode-client.jar
+!battlecode-server.jar
+!battlecode-player.jar
+!jogl.all.jar
