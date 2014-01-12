@@ -25,7 +25,8 @@ public class SoldierRobot extends BaseRobot {
     static int pathCreatedRound = -1;
 
     public SoldierRobot(RobotController rc) throws GameActionException {
-        super(rc);
+        super(rc);          
+        BreadthFirst.rc = rc;
     }
 
     @Override
@@ -51,7 +52,7 @@ public class SoldierRobot extends BaseRobot {
                 if(pathCreatedRound<broadcastCreatedRound){
                     rc.setIndicatorString(1, "downloading path");
                     pathCreatedRound = broadcastCreatedRound;
-                    path = Comms.downloadPath();
+                    path = Comms.downloadPath(rc);
                 }
             }
             if(path.size() > 0){

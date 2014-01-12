@@ -1,5 +1,7 @@
 package ourBot_v1;
 
+import ourBot_v1.BreadthFirst;
+import ourBot_v1.VectorFunctions;
 import ourBot_v1.Comms;
 import battlecode.common.Direction;
 import battlecode.common.GameActionException;
@@ -12,7 +14,11 @@ public class HQRobot extends BaseRobot {
 
     public HQRobot(RobotController rc) throws GameActionException {
         super(rc);
-        // TODO Auto-generated constructor stub
+        rc.broadcast(101,VectorFunctions.locToInt(VectorFunctions.mldivide(rc.senseHQLocation(),bigBoxSize)));//this tells soldiers to stay near HQ to start
+        rc.broadcast(102,-1);//and to remain in squad 1
+        tryToSpawn(rc);
+        BreadthFirst.init(rc, bigBoxSize);
+        rallyPoint = VectorFunctions.mladd(VectorFunctions.mldivide(VectorFunctions.mlsubtract(rc.senseEnemyHQLocation(),rc.senseHQLocation()),3),rc.senseHQLocation());
     }
 
     @Override
@@ -20,12 +26,12 @@ public class HQRobot extends BaseRobot {
         //TODO consider updating the rally point to an allied pastr 
 
         //tell them to go to the rally point
-        Comms.findPathAndBroadcast(1,rc.getLocation(), rallyPoint, bigBoxSize, 2);
+        Comms.findPathAndBroadcast(rc, 1, rc.getLocation(), rallyPoint, bigBoxSize, 2);
 
         //if the enemy builds a pastr, tell squad 2 to go there.
         MapLocation[] enemyPastrs = rc.sensePastrLocations(rc.getTeam().opponent());
         if(enemyPastrs.length>0){
-            Comms.findPathAndBroadcast(2,rallyPoint,enemyPastrs[0],bigBoxSize,2);//for some reason, they are not getting this message
+            Comms.findPathAndBroadcast(rc, 2, rallyPoint,enemyPastrs[0],bigBoxSize,2);//for some reason, they are not getting this message
         }
 
         //after telling them where to go, consider spawning

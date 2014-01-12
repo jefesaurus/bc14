@@ -9,12 +9,12 @@ public class MoveInfo {
     public Direction dir;
     public boolean move;
 
-    /** Move in a direction. 
-     * @param moonwalk true if we want to move backwards, false if we want to move forwards */
+    /** Move in a direction. */
     public MoveInfo(Direction dirToMove) {
         this.dir = dirToMove;
         move = true;
     }
+    
     /** Spawn a robot in a given direction. */
     public MoveInfo(RobotType robotType, Direction dirToSpawn) {
         this.robotType = robotType;
