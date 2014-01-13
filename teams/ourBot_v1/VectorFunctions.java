@@ -60,5 +60,40 @@ public class VectorFunctions {
         }
         return robotLocations;
     }
+    public static MapLocation[] robotsToLocationsRemoveHQ(Robot[] robotList,RobotController rc) throws GameActionException{
+        boolean hq = false;
+        MapLocation enemyhq = rc.senseEnemyHQLocation();
+        MapLocation[] robotLocations = new MapLocation[robotList.length];
+        for(int i=0;i<robotList.length;i++){
+            Robot anEnemy = robotList[i];
+            RobotInfo anEnemyInfo = rc.senseRobotInfo(anEnemy);
+            if (anEnemyInfo.location == enemyhq) {
+               hq = true;
+               break;
+            } else {
+              robotLocations[i] = anEnemyInfo.location;
+            }
+        }
+        
+        boolean hit_hq = false;
+        if (hq == true) {
+          robotLocations = new MapLocation[robotList.length -1];
+          for (int i=0;i<robotList.length;i++) {
+            Robot anEnemy = robotList[i];
+            RobotInfo anEnemyInfo = rc.senseRobotInfo(anEnemy);
+            if (anEnemyInfo.location == enemyhq) {
+               hit_hq = true;
+               continue;
+            } else {
+              if (hit_hq == true) {
+                robotLocations[i-1] = anEnemyInfo.location;
+              } else {
+                robotLocations[i] = anEnemyInfo.location;
+              }
+            }
+          }
+        }
+        return robotLocations;
+    }
 }
 

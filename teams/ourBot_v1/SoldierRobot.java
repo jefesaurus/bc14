@@ -31,10 +31,11 @@ public class SoldierRobot extends BaseRobot {
 
     @Override
     public void run() throws GameActionException {
-        //follow orders from HQ
-        Robot[] enemyRobots = rc.senseNearbyGameObjects(Robot.class, 10000, rc.getTeam().opponent());
-        if(enemyRobots.length>0){//SHOOT AT, OR RUN TOWARDS, ENEMIES
-            MapLocation[] robotLocations = VectorFunctions.robotsToLocations(enemyRobots, rc);
+      //follow orders from HQ
+        Robot[] enemyRobots = rc.senseNearbyGameObjects(Robot.class,10000,rc.getTeam().opponent());
+        MapLocation[] robotLocations = VectorFunctions.robotsToLocationsRemoveHQ(enemyRobots, rc);
+        
+        if(robotLocations.length>0){//SHOOT AT, OR RUN TOWARDS, ENEMIES
             MapLocation closestEnemyLoc = VectorFunctions.findClosest(robotLocations, rc.getLocation());
             if(closestEnemyLoc.distanceSquaredTo(rc.getLocation())<rc.getType().attackRadiusMaxSquared){//close enough to shoot
                 if(rc.isActive()){
