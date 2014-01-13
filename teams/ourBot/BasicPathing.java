@@ -7,8 +7,7 @@ import battlecode.common.*;
 public class BasicPathing{
 	
 	static ArrayList<MapLocation> snailTrail = new ArrayList<MapLocation>();
-	
-	public static boolean canMove(Direction dir, boolean selfAvoiding,RobotController rc){
+public static boolean canMove(Direction dir, boolean selfAvoiding,RobotController rc){
 		//include both rc.canMove and the snail Trail requirements
 		if(selfAvoiding){
 			MapLocation resultingLocation = rc.getLocation().add(dir);

@@ -11,7 +11,7 @@ public class RobotPlayer{
 	static Random randall = new Random();
 	static int directionalLooks[] = new int[]{0,1,-1,2,-2,3,-3,4};
 	static ArrayList<MapLocation> path = new ArrayList<MapLocation>();
-	static int bigBoxSize = 5;
+	static int bigBoxSize = 10;
 	
 	//HQ data:
 	static MapLocation rallyPoint;
@@ -62,7 +62,7 @@ public class RobotPlayer{
 		//if the enemy builds a pastr, tell sqaud 2 to go there.
 		MapLocation[] enemyPastrs = rc.sensePastrLocations(rc.getTeam().opponent());
 		if(enemyPastrs.length>0){
-			Comms.findPathAndBroadcast(2,rallyPoint,enemyPastrs[0],bigBoxSize,2);//for some reason, they are not getting this message
+			Comms.findPathAndBroadcast(1,rallyPoint,enemyPastrs[0],bigBoxSize,2);//for some reason, they are not getting this message
 		}
 		
 		//after telling them where to go, consider spawning
@@ -85,8 +85,9 @@ public class RobotPlayer{
 	private static void runSoldier() throws GameActionException {
 		//follow orders from HQ
 		Robot[] enemyRobots = rc.senseNearbyGameObjects(Robot.class,10000,rc.getTeam().opponent());
-		if(enemyRobots.length>0){//SHOOT AT, OR RUN TOWARDS, ENEMIES
-			MapLocation[] robotLocations = VectorFunctions.robotsToLocations(enemyRobots, rc);
+        MapLocation[] robotLocations = VectorFunctions.robotsToLocationsRemoveHQ(enemyRobots, rc);
+		
+		if(robotLocations.length>0){//SHOOT AT, OR RUN TOWARDS, ENEMIES
 			MapLocation closestEnemyLoc = VectorFunctions.findClosest(robotLocations, rc.getLocation());
 			if(closestEnemyLoc.distanceSquaredTo(rc.getLocation())<rc.getType().attackRadiusMaxSquared){//close enough to shoot
 				if(rc.isActive()){

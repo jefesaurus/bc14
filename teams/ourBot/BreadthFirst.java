@@ -60,7 +60,6 @@ public class BreadthFirst {
 		}
 	}
 	
-	@SuppressWarnings("unused")
 	public static ArrayList<MapLocation> pathTo(MapLocation start,MapLocation goal, int maxSearchDist) {
 		//clear path info for next computation
 		shortestPathLocated = false;
