@@ -46,6 +46,7 @@ public abstract class BaseRobot {
         myID = rc.getRobot().getID();
         myHome = rc.senseHQLocation();
         updateRoundVariables();
+        bigBoxSize = rc.getMapHeight() * rc.getMapWidth() / 400;
     }
 
     public abstract void run() throws GameActionException;

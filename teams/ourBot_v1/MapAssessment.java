@@ -17,6 +17,8 @@ public class MapAssessment{
                 coarseMap[x/bigBoxSize][y/bigBoxSize]+=countObstacles(x,y,rc);
             }
         }
+        //printCoarseMap();
+        //printBigCoarseMap(rc);
     }
 
     public static int countObstacles(int x, int y,RobotController rc){//returns a 0 or a 1

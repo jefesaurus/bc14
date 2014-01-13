@@ -50,7 +50,7 @@ public class BreadthFirst {
         for(int x=0;x<width;x++){
             for(int y=0;y<height;y++){
                 int val = MapAssessment.coarseMap[x][y];
-                if(val==MapAssessment.bigBoxSize*MapAssessment.bigBoxSize){//completely filled with voids
+                if(val==MapAssessment.bigBoxSize*MapAssessment.bigBoxSize*4){//completely filled with voids
                     val=0;//if it's zero, consider it non-traversible
                 }else{
                     val+=10000;//if it's >= 10000, consider it on-map
@@ -60,7 +60,6 @@ public class BreadthFirst {
         }
     }
 
-    @SuppressWarnings("unused")
     public static ArrayList<MapLocation> pathTo(MapLocation start,MapLocation goal, int maxSearchDist) {
         //clear path info for next computation
         shortestPathLocated = false;
