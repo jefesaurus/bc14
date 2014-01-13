@@ -7,6 +7,7 @@ import battlecode.common.Direction;
 import battlecode.common.GameActionException;
 import battlecode.common.GameConstants;
 import battlecode.common.MapLocation;
+import battlecode.common.Robot;
 import battlecode.common.RobotController;
 
 public class HQRobot extends BaseRobot {
@@ -32,6 +33,18 @@ public class HQRobot extends BaseRobot {
         MapLocation[] enemyPastrs = rc.sensePastrLocations(rc.getTeam().opponent());
         if(enemyPastrs.length>0){
             Comms.findPathAndBroadcast(rc, 2, rallyPoint,enemyPastrs[0],bigBoxSize,2);//for some reason, they are not getting this message
+        }
+        
+        Robot[] enemyRobots = rc.senseNearbyGameObjects(Robot.class,10000,rc.getTeam().opponent());
+        MapLocation[] robotLocations = VectorFunctions.robotsToLocations(enemyRobots, rc);
+        
+        if(robotLocations.length>0){
+            MapLocation closestEnemyLoc = VectorFunctions.findClosest(robotLocations, rc.getLocation());
+            if(closestEnemyLoc.distanceSquaredTo(rc.getLocation())<rc.getType().attackRadiusMaxSquared){//close enough to shoot
+                if(rc.isActive()){
+                    rc.attackSquare(closestEnemyLoc);
+                }
+            }
         }
 
         //after telling them where to go, consider spawning
