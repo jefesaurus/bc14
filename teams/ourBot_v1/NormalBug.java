@@ -1,13 +1,13 @@
 package ourBot_v1;
 
-import battlecode.common.Clock;
+import battlecode.common.*;
 
 public class NormalBug {
     final static int[][] d = new int[8][2];
     static {
         for(int i=0; i<8; i++) { 
-            d[i][0] = GameConstants.directions[i].dx;
-            d[i][1] = GameConstants.directions[i].dy;
+            d[i][0] = Direction.values()[i].dx;
+            d[i][1] = Direction.values()[i].dy;
         }
     }
     
