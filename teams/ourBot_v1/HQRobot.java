@@ -41,7 +41,7 @@ public class HQRobot extends BaseRobot {
         if(robotLocations.length>0){
             MapLocation closestEnemyLoc = VectorFunctions.findClosest(robotLocations, rc.getLocation());
             if(closestEnemyLoc.distanceSquaredTo(rc.getLocation())<rc.getType().attackRadiusMaxSquared){//close enough to shoot
-                if(rc.isActive()){
+                if(rc.isActive()&&rc.canAttackSquare(closestEnemyLoc)){
                     rc.attackSquare(closestEnemyLoc);
                 }
             }
