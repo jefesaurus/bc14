@@ -1,8 +1,8 @@
-package ourBot_v1;
+package ourBot_v1.robots;
 
 import ourBot_v1.BreadthFirst;
-import ourBot_v1.VectorFunctions;
 import ourBot_v1.Comms;
+import ourBot_v1.util.VectorFunctions;
 import battlecode.common.Direction;
 import battlecode.common.GameActionException;
 import battlecode.common.GameConstants;
@@ -24,7 +24,6 @@ public class HQRobot extends BaseRobot {
 
     @Override
     public void run() throws GameActionException {
-        //TODO consider updating the rally point to an allied pastr 
 
         //tell them to go to the rally point
         Comms.findPathAndBroadcast(rc, 1, rc.getLocation(), rallyPoint, bigBoxSize, 2);

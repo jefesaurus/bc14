@@ -2,6 +2,9 @@ package ourBot_v1;
 
 import java.util.ArrayList;
 
+import ourBot_v1.robots.BaseRobot;
+import ourBot_v1.util.VectorFunctions;
+
 import battlecode.common.*;
 
 public class Comms{
@@ -18,7 +21,7 @@ public class Comms{
         return downloadedPath;
     }
 
-    public static void findPathAndBroadcast(RobotController rc, int bandID,MapLocation start, MapLocation goal, int bigBoxSize, int joinSquadNo) throws GameActionException{
+    public static void findPathAndBroadcast(RobotController rc, int bandID, MapLocation start, MapLocation goal, int bigBoxSize, int joinSquadNo) throws GameActionException{
         //tell robots where to go
         //the unit will not pathfind if the broadcast goal (for this band ID) is the same as the one currently on the message channel
         int band = bandID*100;

@@ -1,5 +1,8 @@
 package ourBot_v1;
 
+import ourBot_v1.robots.BaseRobot;
+import ourBot_v1.robots.HQRobot;
+import ourBot_v1.robots.SoldierRobot;
 import battlecode.common.RobotController;
 
 public class RobotPlayer {

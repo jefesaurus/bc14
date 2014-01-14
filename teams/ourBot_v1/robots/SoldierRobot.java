@@ -1,9 +1,9 @@
-package ourBot_v1;
+package ourBot_v1.robots;
 
 import ourBot_v1.BasicPathing;
 import ourBot_v1.BreadthFirst;
 import ourBot_v1.Comms;
-import ourBot_v1.VectorFunctions;
+import ourBot_v1.util.VectorFunctions;
 import battlecode.common.Direction;
 import battlecode.common.GameActionException;
 import battlecode.common.MapLocation;

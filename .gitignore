@@ -4,6 +4,7 @@
 *.jar
 *.war
 *.ear
+*DS_Store
 
 # Do upload the lib's
 !battlecode-client.jar

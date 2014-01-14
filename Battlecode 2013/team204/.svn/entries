@@ -1,0 +1,71 @@
+10
+
+dir
+132
+svn://tlayton.scripts.mit.edu/repo/Battlecode2013/teams/team204
+svn://tlayton.scripts.mit.edu/repo
+
+
+
+2013-01-18T00:08:47.827043Z
+132
+tlayton
+
+
+svn:special svn:externals svn:needs-lock
+
+
+
+
+
+
+
+
+
+
+
+56da38b1-f769-446a-aa18-828b76378284
+
+RobotPlayer.java
+file
+
+
+
+
+2013-01-15T06:52:11.000000Z
+2b85fa5b958934b09b5d024a518e04b9
+2013-01-14T03:42:53.178653Z
+108
+tlayton
+has-props
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+1352
+
+brains
+dir
+
+manager
+dir
+
+util
+dir
+

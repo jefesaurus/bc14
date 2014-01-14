@@ -2,6 +2,8 @@ package ourBot_v1;
 
 import java.util.ArrayList;
 
+import ourBot_v1.util.VectorFunctions;
+
 import battlecode.common.*;
 
 public class BreadthFirst {

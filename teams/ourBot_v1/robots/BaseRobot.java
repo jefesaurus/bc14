@@ -1,7 +1,8 @@
-package ourBot_v1;
+package ourBot_v1.robots;
 
 import java.util.ArrayList;
 import java.util.Random;
+
 
 import battlecode.common.Clock;
 import battlecode.common.Direction;
@@ -31,12 +32,12 @@ public abstract class BaseRobot {
     public int gameEndTime = GameConstants.ROUND_MAX_LIMIT;
 
 
-    static Direction allDirections[] = Direction.values();
+    protected static Direction allDirections[] = Direction.values();
     static Random randall = new Random();
-    static int directionalLooks[] = new int[]{0,1,-1,2,-2,3,-3,4};
-    static ArrayList<MapLocation> path = new ArrayList<MapLocation>();
-    static int bigBoxSize = 5;
-    static int myBand = 100;
+    protected static int directionalLooks[] = new int[]{0,1,-1,2,-2,3,-3,4};
+    protected static ArrayList<MapLocation> path = new ArrayList<MapLocation>();
+    protected static int bigBoxSize = 5;
+    public static int myBand = 100;
 
 
     public BaseRobot(RobotController myRC) throws GameActionException {
@@ -88,8 +89,7 @@ public abstract class BaseRobot {
     /** Should be overridden by any robot that wants to do movements. 
      * @return a new MoveInfo structure that either represents a spawn, a move, or a turn
      */
-    public MoveInfo computeNextMove() throws GameActionException {
-        return null;
+    public void computeNextMove() throws GameActionException {
     }
 
     public String locationToVectorString(MapLocation loc) {
