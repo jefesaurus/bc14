@@ -5,6 +5,11 @@ import java.util.ArrayList;
 import battlecode.common.*;
 
 public class VectorFunctions {
+    
+    public static int locToCoordinates(MapLocation loc, int mapWidth) {
+      return loc.y * mapWidth + loc.x;
+    }
+    
     public static MapLocation findClosest(MapLocation[] manyLocs, MapLocation point){
         int closestDist = 10000000;
         int challengerDist = closestDist;
