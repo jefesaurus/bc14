@@ -1,5 +1,8 @@
 package ourBot_v1.robots;
 
+import ourBot_v1.*;
+import ourBot_v1.managers.MapCacheSystem;
+
 import java.util.ArrayList;
 import java.util.Random;
 
@@ -17,6 +20,8 @@ public abstract class BaseRobot {
 
     // Core Subsystems
     public final RobotController rc;
+    public final NavigationSystem nav;
+    public final MapCacheSystem mc;
 
     // Robot Statistics - permanent variables
     public final RobotType myType;
@@ -48,6 +53,8 @@ public abstract class BaseRobot {
         myHome = rc.senseHQLocation();
         updateRoundVariables();
         bigBoxSize = rc.getMapHeight() * rc.getMapWidth() / 400;
+        nav = new NavigationSystem(this);
+        mc = new MapCacheSystem(this);
     }
 
     public abstract void run() throws GameActionException;

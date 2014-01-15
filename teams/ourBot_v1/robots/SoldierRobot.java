@@ -1,6 +1,8 @@
 package ourBot_v1.robots;
 
 import ourBot_v1.BasicPathing;
+import ourBot_v1.NavigationMode;
+import ourBot_v1.NavigationSystem;
 import ourBot_v1.BreadthFirst;
 import ourBot_v1.Comms;
 import ourBot_v1.util.VectorFunctions;
@@ -23,9 +25,11 @@ public class SoldierRobot extends BaseRobot {
     }
 
     static int pathCreatedRound = -1;
-
+    public final NavigationSystem nav;
     public SoldierRobot(RobotController rc) throws GameActionException {
-        super(rc);          
+        super(rc);
+        nav = new NavigationSystem(this);
+        nav.setNavigationMode(NavigationMode.BUG);
         BreadthFirst.rc = rc;
     }
 

@@ -10,8 +10,6 @@ public class MapCacheSystem {
     final int mapHeight;
     TerrainTile[][] terrain;
 
-    
-
     public MapCacheSystem(BaseRobot baseRobot) {
         this.br = baseRobot;
         this.mapHeight = br.rc.getMapHeight();
@@ -45,6 +43,10 @@ public class MapCacheSystem {
      */
     public boolean isOffMap(MapLocation loc) {
         return loc.x > this.mapWidth || loc.y > this.mapHeight;
-    }    
+    }  
+    
+    public boolean isVoid(MapLocation loc) {
+      return getTerrainTile(loc) == TerrainTile.VOID;
+    }
 
 }
