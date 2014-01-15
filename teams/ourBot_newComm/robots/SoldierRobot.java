@@ -4,6 +4,7 @@ import ourBot_newComm.BasicPathing;
 import ourBot_newComm.BreadthFirst;
 import ourBot_newComm.Comms;
 import ourBot_newComm.managers.InfoArray.Command;
+import ourBot_newComm.navigation.NavigationMode;
 import ourBot_newComm.util.VectorFunctions;
 import battlecode.common.Direction;
 import battlecode.common.GameActionException;
@@ -31,7 +32,8 @@ public class SoldierRobot extends BaseRobot {
         super(rc);          
         squadNum = comms.getNewSpawnSquad();
         rc.setIndicatorString(1, "Squad: " + squadNum);
-
+        nav.setNavigationMode(NavigationMode.BUG);
+        
         BreadthFirst.rc = rc;
     }
 
@@ -64,8 +66,11 @@ public class SoldierRobot extends BaseRobot {
             default:
                 destination = currentCommand.loc;
             }
-            Direction towardClosest = rc.getLocation().directionTo(destination);
-            simpleMove(towardClosest, rc);
+            nav.setDestination(destination);
+            Direction toMove = nav.navigateToDestination();
+            if (toMove != null) {
+                simpleMove(toMove, rc);
+            }
         }
     }
 
