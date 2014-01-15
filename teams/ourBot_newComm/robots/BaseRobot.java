@@ -3,7 +3,10 @@ package ourBot_newComm.robots;
 import java.util.ArrayList;
 import java.util.Random;
 
+import ourBot_newComm.managers.MapCacheSystem;
 import ourBot_newComm.managers.InfoArray.InfoArrayManager;
+import ourBot_newComm.navigation.NavigationSystem;
+
 import battlecode.common.Clock;
 import battlecode.common.Direction;
 import battlecode.common.GameActionException;
@@ -18,6 +21,8 @@ public abstract class BaseRobot {
     // Core Subsystems
     public final RobotController rc;
     public final InfoArrayManager comms;
+    public final NavigationSystem nav;
+    public final MapCacheSystem mc;
 
     // Robot Statistics - permanent variables
     public final RobotType myType;
@@ -49,6 +54,8 @@ public abstract class BaseRobot {
         myHome = rc.senseHQLocation();
         
         comms = new InfoArrayManager(rc);
+        nav = new NavigationSystem(this);
+        mc = new MapCacheSystem(this);
         
         updateRoundVariables();
         bigBoxSize = rc.getMapHeight() * rc.getMapWidth() / 400;

@@ -46,5 +46,8 @@ public class MapCacheSystem {
     public boolean isOffMap(MapLocation loc) {
         return loc.x > this.mapWidth || loc.y > this.mapHeight;
     }    
-
+    
+    public boolean isVoid(MapLocation loc) {
+          return getTerrainTile(loc) == TerrainTile.VOID;
+    }
 }
