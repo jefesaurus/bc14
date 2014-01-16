@@ -26,7 +26,6 @@ public class HQRobot extends BaseRobot {
 
     public HQRobot(RobotController rc) throws GameActionException {
         super(rc);
-        InfoCache ic = new InfoCache(rc);
         rallyPoint = VectorFunctions.mladd(VectorFunctions.mldivide(VectorFunctions.mlsubtract(rc.senseEnemyHQLocation(),rc.senseHQLocation()),3),rc.senseHQLocation());
         
         // Set the new spawn squad
@@ -40,7 +39,6 @@ public class HQRobot extends BaseRobot {
 
     @Override
     public void run() throws GameActionException {
-        
         newCommsSystem();
     }
     

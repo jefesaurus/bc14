@@ -3,10 +3,10 @@ package ourBot_newComm.robots;
 import java.util.ArrayList;
 import java.util.Random;
 
+import ourBot_newComm.managers.InfoCache;
 import ourBot_newComm.managers.MapCacheSystem;
 import ourBot_newComm.managers.InfoArray.InfoArrayManager;
 import ourBot_newComm.navigation.NavigationSystem;
-
 import battlecode.common.Clock;
 import battlecode.common.Direction;
 import battlecode.common.GameActionException;
@@ -23,6 +23,7 @@ public abstract class BaseRobot {
     public final InfoArrayManager comms;
     public final NavigationSystem nav;
     public final MapCacheSystem mc;
+    public final InfoCache ic;
 
     // Robot Statistics - permanent variables
     public final RobotType myType;
@@ -40,6 +41,7 @@ public abstract class BaseRobot {
 
     protected static Direction allDirections[] = Direction.values();
     static Random randall = new Random();
+    
     protected static int directionalLooks[] = new int[]{0,1,-1,2,-2,3,-3,4};
     protected static ArrayList<MapLocation> path = new ArrayList<MapLocation>();
     protected static int bigBoxSize = 5;
@@ -48,6 +50,8 @@ public abstract class BaseRobot {
 
     public BaseRobot(RobotController myRC) throws GameActionException {
         rc = myRC;
+        ic = new InfoCache(rc);
+
         myType = rc.getType();
         myTeam = rc.getTeam();
         myID = rc.getRobot().getID();

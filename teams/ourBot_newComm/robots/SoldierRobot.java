@@ -23,7 +23,6 @@ public class SoldierRobot extends BaseRobot {
         rc.setIndicatorString(1, "Squad: " + squadNum);
         nav.setNavigationMode(NavigationMode.BUG);
         
-        BreadthFirst.rc = rc;
     }
 
     @Override
@@ -79,7 +78,7 @@ public class SoldierRobot extends BaseRobot {
     
     public void moveDuringBattle(Robot[] enemies) throws GameActionException {
         //int c_start = Clock.getBytecodeNum();
-        Robot[] allies = rc.senseNearbyGameObjects(Robot.class, 100000, rc.getTeam());
+        Robot[] allies = rc.senseNearbyGameObjects(Robot.class, SOLDIER_SIGHT_RANGE, rc.getTeam());
         
         //botMap.clear();
         
@@ -118,7 +117,8 @@ public class SoldierRobot extends BaseRobot {
         
         MapLocation enemyCentroid = new MapLocation(enemyCentroidX/numEnemies, enemyCentroidY/numEnemies);
         //MapLocation allyCentroid = new MapLocation(allyCentroidX/numEnemies, allyCentroidY/numEnemies);
-        
+        rc.setIndicatorString(0, "Allies: " + numAllies + " Enemies: " + numEnemies);
+
         if (numAllies > numEnemies) {
             // Offense
             if (lowestHealthAttackable != null && lowestHealthAttackable.type != RobotType.HQ) {
@@ -127,7 +127,11 @@ public class SoldierRobot extends BaseRobot {
                 simpleMove(center.directionTo(enemyCentroid), rc);
             }
         } else {
-            simpleMove(center.directionTo(rc.senseHQLocation()), rc); 
+            nav.setDestination(ic.HQLocation);
+            Direction toMove = nav.navigateToDestination();
+            if (toMove != null) {
+                simpleMove(toMove, rc);
+            }
         }
     }
 }
