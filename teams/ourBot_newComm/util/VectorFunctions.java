@@ -51,6 +51,7 @@ public class VectorFunctions {
     public static MapLocation bigBoxCenter(MapLocation bigBoxLoc, int bigBoxSize){
         return mladd(mlmultiply(bigBoxLoc,bigBoxSize), new MapLocation(bigBoxSize/2,bigBoxSize/2));
     }
+    
     public static MapLocation[] robotsToLocations(Robot[] robotList,RobotController rc) throws GameActionException{
         MapLocation[] robotLocations = new MapLocation[robotList.length];
         for(int i=0;i<robotList.length;i++){
@@ -60,6 +61,7 @@ public class VectorFunctions {
         }
         return robotLocations;
     }
+    
     public static MapLocation[] robotsToLocationsRemoveHQ(Robot[] robotList,RobotController rc) throws GameActionException{
         boolean hq = false;
         MapLocation enemyhq = rc.senseEnemyHQLocation();

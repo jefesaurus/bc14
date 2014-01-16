@@ -1,8 +1,9 @@
 package ourBot_newComm.robots;
 
-import ourBot_newComm.BreadthFirst;
-import ourBot_newComm.Comms;
+import ourBot_newComm.util.FastSet;
+
 import ourBot_newComm.Constants;
+import ourBot_newComm.managers.InfoCache;
 import ourBot_newComm.managers.InfoArray.Command;
 import ourBot_newComm.managers.InfoArray.CommandType;
 import ourBot_newComm.util.VectorFunctions;
@@ -15,13 +16,17 @@ import battlecode.common.RobotController;
 
 public class HQRobot extends BaseRobot {
     static MapLocation rallyPoint;
+    static FastSet enemyPastrsDetected = new FastSet();
+    
+    static Command[] squadCommands = new Command[999];
+
     
     int currentSquadNum = 0;
     int currentSquadSize = 0;
 
     public HQRobot(RobotController rc) throws GameActionException {
         super(rc);
-   
+        InfoCache ic = new InfoCache(rc);
         rallyPoint = VectorFunctions.mladd(VectorFunctions.mldivide(VectorFunctions.mlsubtract(rc.senseEnemyHQLocation(),rc.senseHQLocation()),3),rc.senseHQLocation());
         
         // Set the new spawn squad
@@ -46,8 +51,35 @@ public class HQRobot extends BaseRobot {
         //if the enemy builds a pastr, tell squad 2 to go there.
         MapLocation[] enemyPastrs = rc.sensePastrLocations(rc.getTeam().opponent());
         if(enemyPastrs.length > 0){
+            MapLocation closestPastr = null;
+            double closestDist = Integer.MAX_VALUE;
+            
+            double currDist;
+            for (int i = 0; i < enemyPastrs.length; i ++) {
+                enemyPastrsDetected.addMapLocation(enemyPastrs[i]);
+                currDist = enemyPastrs[i].distanceSquaredTo(InfoCache.HQLocation);
+                if (currDist < closestDist) {
+                    closestPastr = enemyPastrs[i];
+                    closestDist = currDist;
+                }
+            }
+            
+            for (int i = 0; i < currentSquadNum; i ++) {
+                if (squadCommands[i].type == CommandType.ATTACK_POINT &&
+                        !enemyPastrsDetected.containsMapLocation(squadCommands[i].loc)) {
+                    // Send old squad to next pastr
+                    Command toSend = new Command(CommandType.ATTACK_POINT, closestPastr);
+                    comms.sendSquadCommand(i, toSend);
+                    squadCommands[currentSquadNum] = toSend;
+                }
+            } 
+            
             if (currentSquadSize >= Constants.MIN_SQUAD_SIZE) {
-                comms.sendSquadCommand(currentSquadNum, new Command(CommandType.ATTACK_POINT, enemyPastrs[0]));
+                Command toSend = new Command(CommandType.ATTACK_POINT, closestPastr);
+                comms.sendSquadCommand(currentSquadNum, toSend);
+                squadCommands[currentSquadNum] = toSend;
+                System.out.println("Sent Loc: " + closestPastr.toString());
+                
                 currentSquadNum++;
                 currentSquadSize = 0;
                 comms.setNewSpawnSquad(currentSquadNum);

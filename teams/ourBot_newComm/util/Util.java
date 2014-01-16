@@ -1,6 +1,7 @@
 package ourBot_newComm.util;
 
 import battlecode.common.Clock;
+import battlecode.common.Direction;
 
 public class Util {
 
@@ -36,4 +37,10 @@ public class Util {
     {
         return (gen() * 2.32830644e-10 + 0.5);
     }
+    
+    public static final Direction[] REGULAR_DIRECTIONS = {Direction.NORTH, Direction.NORTH_EAST, Direction.EAST,
+        Direction.SOUTH_EAST, Direction.SOUTH, Direction.SOUTH_WEST, Direction.WEST, Direction.NORTH_WEST};
+    
+    public static final Direction[] REGULAR_DIRECTIONS_WITH_NONE = {Direction.NORTH, Direction.NORTH_EAST, Direction.EAST,
+        Direction.SOUTH_EAST, Direction.SOUTH, Direction.SOUTH_WEST, Direction.WEST, Direction.NORTH_WEST, Direction.NONE};
 }
