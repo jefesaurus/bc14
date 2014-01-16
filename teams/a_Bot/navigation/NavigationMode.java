@@ -1,4 +1,4 @@
-package ourBot_newComm.navigation;
+package a_Bot.navigation;
 
 public enum NavigationMode {
     RANDOM, GREEDY, BUG;

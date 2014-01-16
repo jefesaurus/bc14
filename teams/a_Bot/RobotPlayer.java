@@ -1,8 +1,8 @@
-package ourBot_newComm;
+package a_Bot;
 
-import ourBot_newComm.robots.BaseRobot;
-import ourBot_newComm.robots.HQRobot;
-import ourBot_newComm.robots.SoldierRobot;
+import a_Bot.robots.BaseRobot;
+import a_Bot.robots.HQRobot;
+import a_Bot.robots.SoldierRobot;
 import battlecode.common.RobotController;
 
 public class RobotPlayer {

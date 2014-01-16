@@ -1,7 +1,7 @@
-package ourBot_newComm.managers.InfoArray;
+package a_Bot.managers.InfoArray;
 
+import a_Bot.util.VectorFunctions;
 import battlecode.common.MapLocation;
-import ourBot_newComm.util.VectorFunctions;
 
 
 public class Command implements ArrayPackable {

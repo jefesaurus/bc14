@@ -1,8 +1,8 @@
-package ourBot_newComm.navigation;
+package a_Bot.navigation;
 
-import ourBot_newComm.robots.*;
-import ourBot_newComm.managers.*;
-import ourBot_newComm.util.*;
+import a_Bot.managers.*;
+import a_Bot.robots.*;
+import a_Bot.util.*;
 import battlecode.common.*;
 
 public class NavigationSystem {

@@ -1,6 +1,6 @@
-package ourBot_newComm.managers.InfoArray;
+package a_Bot.managers.InfoArray;
 
-import ourBot_newComm.util.VectorFunctions;
+import a_Bot.util.VectorFunctions;
 import battlecode.common.GameActionException;
 import battlecode.common.MapLocation;
 import battlecode.common.RobotController;

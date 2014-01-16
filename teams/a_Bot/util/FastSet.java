@@ -1,4 +1,4 @@
-package ourBot_newComm.util;
+package a_Bot.util;
 
 import battlecode.common.MapLocation;
 

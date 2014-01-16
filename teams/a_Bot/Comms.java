@@ -1,10 +1,9 @@
-package ourBot_newComm;
+package a_Bot;
 
 import java.util.ArrayList;
 
-import ourBot_newComm.robots.BaseRobot;
-import ourBot_newComm.util.VectorFunctions;
-
+import a_Bot.robots.BaseRobot;
+import a_Bot.util.VectorFunctions;
 import battlecode.common.*;
 
 public class Comms{

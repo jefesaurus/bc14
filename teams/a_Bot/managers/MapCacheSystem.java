@@ -1,6 +1,6 @@
-package ourBot_newComm.managers;
+package a_Bot.managers;
 
-import ourBot_newComm.robots.BaseRobot;
+import a_Bot.robots.BaseRobot;
 import battlecode.common.MapLocation;
 import battlecode.common.TerrainTile;
 

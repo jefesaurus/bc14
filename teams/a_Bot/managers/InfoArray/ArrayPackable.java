@@ -1,4 +1,4 @@
-package ourBot_newComm.managers.InfoArray;
+package a_Bot.managers.InfoArray;
 
 public interface ArrayPackable {
     public static int packedSize = -1;

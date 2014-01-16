@@ -1,9 +1,9 @@
-package ourBot_newComm.managers.InfoArray;
+package a_Bot.managers.InfoArray;
 
+import a_Bot.Constants;
+import a_Bot.robots.BaseRobot;
+import a_Bot.util.VectorFunctions;
 import battlecode.common.MapLocation;
-import ourBot_newComm.Constants;
-import ourBot_newComm.robots.BaseRobot;
-import ourBot_newComm.util.VectorFunctions;
 
 public class MapPath implements ArrayPackable  {
     int packedSize = Constants.MAX_PATH_SIZE;

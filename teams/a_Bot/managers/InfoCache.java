@@ -1,4 +1,4 @@
-package ourBot_newComm.managers;
+package a_Bot.managers;
 
 import battlecode.common.MapLocation;
 import battlecode.common.RobotController;
