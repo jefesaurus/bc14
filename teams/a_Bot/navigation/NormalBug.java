@@ -1,4 +1,4 @@
-package ourBot_newComm;
+package a_Bot.navigation;
 
 import battlecode.common.*;
 
@@ -53,7 +53,7 @@ public class NormalBug {
         this.ty = ty;
         reset();
     }
-    
+
     public void reset() {
         tracing = -1;
         defaultTraceDirection = Clock.getRoundNum()/200%2; //(int)(Util.randDouble()+0.5);

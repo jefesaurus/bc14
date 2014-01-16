@@ -1,29 +1,18 @@
 package ourBot_newComm.robots;
 
-import ourBot_newComm.BasicPathing;
 import ourBot_newComm.BreadthFirst;
-import ourBot_newComm.Comms;
+import ourBot_newComm.managers.InfoCache;
 import ourBot_newComm.managers.InfoArray.Command;
 import ourBot_newComm.navigation.NavigationMode;
-import ourBot_newComm.util.VectorFunctions;
 import battlecode.common.Direction;
 import battlecode.common.GameActionException;
 import battlecode.common.MapLocation;
 import battlecode.common.Robot;
 import battlecode.common.RobotController;
+import battlecode.common.RobotInfo;
+import battlecode.common.RobotType;
 
 public class SoldierRobot extends BaseRobot {
-    private enum BehaviorState {
-        /** No enemies to deal with, swarming. */
-        SWARM,
-        /** Heard of an enemy spotted call, but no enemy info calls yet. */
-        SEEK,
-        /** Far from target. Use bug to navigate. */
-        LOST,
-        /** Tracking closest enemy, even follow them for 12 turns. */
-        ENEMY_DETECTED,
-    }
-
     static int pathCreatedRound = -1;
     int squadNum = 0;
     Command currentCommand;
@@ -34,7 +23,6 @@ public class SoldierRobot extends BaseRobot {
         rc.setIndicatorString(1, "Squad: " + squadNum);
         nav.setNavigationMode(NavigationMode.BUG);
         
-        BreadthFirst.rc = rc;
     }
 
     @Override
@@ -43,19 +31,11 @@ public class SoldierRobot extends BaseRobot {
         currentCommand = comms.getSquadCommand(squadNum);
         rc.setIndicatorString(2, currentCommand.toString());
 
-
-        Robot[] enemyRobots = rc.senseNearbyGameObjects(Robot.class,10000,rc.getTeam().opponent());
-        MapLocation[] robotLocations = VectorFunctions.robotsToLocationsRemoveHQ(enemyRobots, rc);
-        
-        if(robotLocations.length > 0){//SHOOT AT, OR RUN TOWARDS, ENEMIES
-            MapLocation closestEnemyLoc = VectorFunctions.findClosest(robotLocations, rc.getLocation());
-            if(closestEnemyLoc.distanceSquaredTo(rc.getLocation())<rc.getType().attackRadiusMaxSquared){//close enough to shoot
-                if(rc.isActive()){
-                    rc.attackSquare(closestEnemyLoc);
-                }
-            }else{//not close enough to shoot, so try to go shoot
-                Direction towardClosest = rc.getLocation().directionTo(closestEnemyLoc);
-                simpleMove(towardClosest, rc);
+        Robot[] nearbyEnemies = rc.senseNearbyGameObjects(Robot.class, 100000, rc.getTeam().opponent());
+                
+        if(nearbyEnemies.length > 0){//SHOOT AT, OR RUN TOWARDS, ENEMIES
+            if (rc.isActive()) {
+                moveDuringBattle(nearbyEnemies);
             }
         } else {//NAVIGATION BY DOWNLOADED PATH
             MapLocation destination;
@@ -85,5 +65,73 @@ public class SoldierRobot extends BaseRobot {
                 }
             }
         }
-    }   
+    }
+    
+    
+    /*
+     * BATTLE MICRO...
+     * 
+     */
+    
+    static final int SOLDIER_SIGHT_RANGE = RobotType.SOLDIER.sensorRadiusSquared;
+    static final int SOLDIER_ATTACK_RANGE = RobotType.SOLDIER.attackRadiusMaxSquared;
+    
+    public void moveDuringBattle(Robot[] enemies) throws GameActionException {
+        //int c_start = Clock.getBytecodeNum();
+        Robot[] allies = rc.senseNearbyGameObjects(Robot.class, SOLDIER_SIGHT_RANGE, rc.getTeam());
+        
+        //botMap.clear();
+        
+        MapLocation center = rc.getLocation();
+        
+        int numEnemies = enemies.length;
+        //int enemyHealth = 0;
+        int enemyCentroidX = 0;
+        int enemyCentroidY = 0;
+        
+        int numAllies = allies.length;
+        //int allyHealth = 0;
+        //int allyCentroidX = 0;
+        //int allyCentroidY = 0;
+              
+        /*
+        RobotInfo[] attackable = new RobotInfo[500];
+        int numAttackableRobots = 0;
+        */
+        RobotInfo lowestHealthAttackable = null;
+        double lowestHealth = 10000000;
+        
+        for (Robot b : enemies) {
+            RobotInfo info = rc.senseRobotInfo(b);
+            enemyCentroidX += info.location.x;
+            enemyCentroidY += info.location.y;
+            if (rc.canAttackSquare(info.location)) {
+
+                //attackable[numAttackableRobots++] = info;
+                if (info.health < lowestHealth) {
+                    lowestHealthAttackable = info;
+                    lowestHealth = info.health;
+                }
+            }   
+        }
+        
+        MapLocation enemyCentroid = new MapLocation(enemyCentroidX/numEnemies, enemyCentroidY/numEnemies);
+        //MapLocation allyCentroid = new MapLocation(allyCentroidX/numEnemies, allyCentroidY/numEnemies);
+        rc.setIndicatorString(0, "Allies: " + numAllies + " Enemies: " + numEnemies);
+
+        if (numAllies > numEnemies) {
+            // Offense
+            if (lowestHealthAttackable != null && lowestHealthAttackable.type != RobotType.HQ) {
+                rc.attackSquare(lowestHealthAttackable.location);
+            } else {
+                simpleMove(center.directionTo(enemyCentroid), rc);
+            }
+        } else {
+            nav.setDestination(ic.HQLocation);
+            Direction toMove = nav.navigateToDestination();
+            if (toMove != null) {
+                simpleMove(toMove, rc);
+            }
+        }
+    }
 }

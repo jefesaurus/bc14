@@ -1,12 +1,12 @@
-package ourBot_newComm.robots;
+package a_Bot.robots;
 
 import java.util.ArrayList;
 import java.util.Random;
 
-import ourBot_newComm.managers.InfoCache;
-import ourBot_newComm.managers.MapCacheSystem;
-import ourBot_newComm.managers.InfoArray.InfoArrayManager;
-import ourBot_newComm.navigation.NavigationSystem;
+import a_Bot.managers.InfoCache;
+import a_Bot.managers.MapCacheSystem;
+import a_Bot.managers.InfoArray.InfoArrayManager;
+import a_Bot.navigation.NavigationSystem;
 import battlecode.common.Clock;
 import battlecode.common.Direction;
 import battlecode.common.GameActionException;
@@ -42,7 +42,7 @@ public abstract class BaseRobot {
     protected static Direction allDirections[] = Direction.values();
     static Random randall = new Random();
     
-    protected static int directionalLooks[] = new int[]{0,1,-1,2,-2,3,-3,4};
+    protected static int directionalLooks[] = new int[]{1,-1,2,-2,3,-3,4};
     protected static ArrayList<MapLocation> path = new ArrayList<MapLocation>();
     protected static int bigBoxSize = 5;
     public static int myBand = 100;
