@@ -29,7 +29,8 @@ public abstract class BaseRobot {
     public final RobotType myType;
     public final Team myTeam;
     public final int myID;
-    public final MapLocation myHome;
+    public final MapLocation myHQ;
+    public final MapLocation enemyHQ;
 
     // Robot Statistics - updated per turn
     public MapLocation curLoc;
@@ -55,7 +56,8 @@ public abstract class BaseRobot {
         myType = rc.getType();
         myTeam = rc.getTeam();
         myID = rc.getRobot().getID();
-        myHome = rc.senseHQLocation();
+        myHQ = rc.senseHQLocation();
+        enemyHQ = rc.senseEnemyHQLocation();
         
         comms = new InfoArrayManager(rc);
         nav = new NavigationSystem(this);

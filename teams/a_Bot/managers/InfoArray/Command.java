@@ -35,6 +35,8 @@ public class Command implements ArrayPackable {
         case RALLY_POINT: return "RALLY POINT: " + mapLoc;
         case ATTACK_POINT:  return "ATTACK POINT: " + mapLoc;
         case PASTR_POINT:  return "PASTR POINT: " + mapLoc;
+        case BUILD_PASTR: return "BUILD PASTR: " + mapLoc;
+        case BUILD_NOISE_TOWER: return "BUILD NOISE TOWER: " + mapLoc;
         }
         return null;
     }

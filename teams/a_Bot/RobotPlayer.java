@@ -2,6 +2,8 @@ package a_Bot;
 
 import a_Bot.robots.BaseRobot;
 import a_Bot.robots.HQRobot;
+import a_Bot.robots.NoiseTower;
+import a_Bot.robots.Pastr;
 import a_Bot.robots.SoldierRobot;
 import battlecode.common.RobotController;
 
@@ -17,6 +19,10 @@ public class RobotPlayer {
             case HQ:
                 br = new HQRobot(rc);
                 break;
+            case NOISETOWER:
+                br = new NoiseTower(rc);
+            case PASTR:
+                br = new Pastr(rc);
             default:
                 break;
             }
