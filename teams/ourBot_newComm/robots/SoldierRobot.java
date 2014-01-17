@@ -1,9 +1,11 @@
 package ourBot_newComm.robots;
 
 import ourBot_newComm.BreadthFirst;
+import ourBot_newComm.util.*;
 import ourBot_newComm.managers.InfoCache;
 import ourBot_newComm.managers.InfoArray.Command;
 import ourBot_newComm.navigation.NavigationMode;
+import battlecode.common.Clock;
 import battlecode.common.Direction;
 import battlecode.common.GameActionException;
 import battlecode.common.MapLocation;
@@ -11,47 +13,142 @@ import battlecode.common.Robot;
 import battlecode.common.RobotController;
 import battlecode.common.RobotInfo;
 import battlecode.common.RobotType;
+import battlecode.common.GameConstants;
+import battlecode.common.TerrainTile;
 
 public class SoldierRobot extends BaseRobot {
+    
+    public enum BehaviorState {
+        BUILD_PASTR,
+        BUILD_NOISE_TOWER,
+        SQUADING
+    }
+    
     static int pathCreatedRound = -1;
     int squadNum = 0;
     Command currentCommand;
-
+    public final BehaviorState state;
     public SoldierRobot(RobotController rc) throws GameActionException {
         super(rc);          
         squadNum = comms.getNewSpawnSquad();
         rc.setIndicatorString(1, "Squad: " + squadNum);
         nav.setNavigationMode(NavigationMode.BUG);
         
+        if (Clock.getRoundNum() < GameConstants.HQ_SPAWN_DELAY_CONSTANT_1) {
+            System.out.println("PASTR " + rc.getRobot().getID());
+            state = BehaviorState.BUILD_PASTR;
+        } 
+        else if (Clock.getRoundNum() < 2*GameConstants.HQ_SPAWN_DELAY_CONSTANT_1) {
+            state = BehaviorState.BUILD_NOISE_TOWER;
+            System.out.println("NOISE TOWER " + rc.getRobot().getID());
+        }
+        else {
+            state = BehaviorState.SQUADING;
+            System.out.println("SQUADING " + rc.getRobot().getID());
+        }
     }
 
     @Override
     public void run() throws GameActionException {
       //follow orders from HQ
-        currentCommand = comms.getSquadCommand(squadNum);
-        rc.setIndicatorString(2, currentCommand.toString());
-
-        Robot[] nearbyEnemies = rc.senseNearbyGameObjects(Robot.class, 100000, rc.getTeam().opponent());
-                
-        if(nearbyEnemies.length > 0){//SHOOT AT, OR RUN TOWARDS, ENEMIES
-            if (rc.isActive()) {
-                moveDuringBattle(nearbyEnemies);
+        switch(this.state) {
+        case SQUADING:
+            currentCommand = comms.getSquadCommand(squadNum);
+            rc.setIndicatorString(2, currentCommand.toString());
+    
+            Robot[] nearbyEnemies = rc.senseNearbyGameObjects(Robot.class, 100000, rc.getTeam().opponent());
+                    
+            if(nearbyEnemies.length > 0){//SHOOT AT, OR RUN TOWARDS, ENEMIES
+                if (rc.isActive()) {
+                    moveDuringBattle(nearbyEnemies);
+                }
+            } else {//NAVIGATION BY DOWNLOADED PATH
+                MapLocation destination;
+                switch (currentCommand.type) {
+                case RALLY_POINT:
+                case ATTACK_POINT:
+                case PASTR_POINT:
+                default:
+                    destination = currentCommand.loc;
+                }
+                nav.setDestination(destination);
+                Direction toMove = nav.navigateToDestination();
+                if (toMove != null) {
+                    simpleMove(toMove, rc);
+                }
             }
-        } else {//NAVIGATION BY DOWNLOADED PATH
-            MapLocation destination;
-            switch (currentCommand.type) {
-            case RALLY_POINT:
-            case ATTACK_POINT:
-            case PASTR_POINT:
-            default:
-                destination = currentCommand.loc;
+            break;
+        case BUILD_PASTR:
+            rc.setIndicatorString(2, "COWGROWTH COMPUTATION");
+            MapLocation pastr_loc = rc.getLocation();//new CowGrowth(rc).getBestLocation();
+            rc.setIndicatorString(2, "DONE WITH COWGROWTH COMPUTATION");
+            comms.setPastrLoc(pastr_loc);
+            nav.setDestination(pastr_loc);
+            
+            while (rc.getLocation().distanceSquaredTo(pastr_loc) > 5) {
+                Direction toMove = nav.navigateToDestination();
+                if (toMove != null) {
+                    simpleMove(toMove, rc);
+                }
+                rc.yield();
             }
-            nav.setDestination(destination);
-            Direction toMove = nav.navigateToDestination();
-            if (toMove != null) {
-                simpleMove(toMove, rc);
+            
+            comms.setPastrLoc(rc.getLocation());
+            
+            while (true) {
+                if (rc.isActive()) {
+                    rc.construct(RobotType.PASTR);
+                    break;
+                }
+                rc.yield();
             }
+            break;
+        case BUILD_NOISE_TOWER:
+            rc.setIndicatorString(2, "NOISE TOWA");
+            MapLocation tower_loc = comms.getPastrLoc();
+            System.out.println("tower_loc: " + tower_loc);
+            nav.setDestination(tower_loc); 
+            rc.setIndicatorString(2, "NOISE TOWA: " + tower_loc.toString());
+            
+            while (rc.getLocation().distanceSquaredTo(tower_loc) > 5) {
+                Direction toMove1 = nav.navigateToDestination();
+                if (toMove1 != null) {
+                    simpleMove(toMove1, rc);
+                }
+                rc.yield();
+            }
+            
+            MapLocation adjacent = comms.getPastrLoc();
+            adjacent = findAdjacentSquare(adjacent);
+            nav.setDestination(adjacent);
+            rc.setIndicatorString(2, "NOISE TOWA Adjacent square: " + adjacent.toString() + "nav destination: " + nav.getDestination().toString());
+            while (rc.getLocation() != adjacent) {
+                Direction toMove2 = nav.navigateToDestination();
+                if (toMove2 != null) {
+                    simpleMove(toMove2, rc);
+                }
+                rc.yield();
+            }
+            
+            while (true) {
+                if (rc.isActive()) {
+                    rc.construct(RobotType.NOISETOWER);
+                    break;
+                }
+                rc.yield();
+            }
+            break;
         }
+    }
+    
+    private MapLocation findAdjacentSquare(MapLocation loc) {
+        Direction dir = Direction.values()[(int) (Util.randDouble() * 8)];
+        MapLocation curLoc = loc.add(dir);
+        while (rc.senseTerrainTile(curLoc) == TerrainTile.VOID || rc.senseTerrainTile(curLoc) == TerrainTile.OFF_MAP) {
+            dir = dir.rotateRight();
+            curLoc = loc.add(dir);
+        }
+        return curLoc;
     }
 
     private static void simpleMove(Direction chosenDirection, RobotController rc) throws GameActionException{

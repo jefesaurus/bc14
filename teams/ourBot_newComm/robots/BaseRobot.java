@@ -62,7 +62,6 @@ public abstract class BaseRobot {
         mc = new MapCacheSystem(this);
         
         updateRoundVariables();
-        bigBoxSize = rc.getMapHeight() * rc.getMapWidth() / 400;
         
         
     }

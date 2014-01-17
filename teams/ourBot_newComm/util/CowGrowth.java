@@ -6,11 +6,11 @@ public class CowGrowth {
     
     private static RobotController rc;
     public static double[][] cowGrowth;
-    public static int bigBoxSize=5; //Magic Number
+    public static int bigBoxSize=8; //Magic Number
     public static double[][] coarseCowGrowth;
     public static double[][] finalLocations;
     
-    public static void init(RobotController rci){
+    public CowGrowth(RobotController rci){
         rc = rci;
         cowGrowth = rc.senseCowGrowth();
     }

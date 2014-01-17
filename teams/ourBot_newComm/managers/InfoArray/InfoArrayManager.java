@@ -22,6 +22,7 @@ public class InfoArrayManager {
     static final int NEW_SPAWN_SQUAD_SLOT = ENEMY_HQ_LOC_SLOT + 1;
     static final int GLOBAL_COMMAND_SLOT = ENEMY_HQ_LOC_SLOT + 1;
     static final int SQUAD_COMMAND_SLOTS = GLOBAL_COMMAND_SLOT + Command.packedSize;
+    static final int PASTR_LOC_SLOT = 1000;
 
 
     public InfoArrayManager(RobotController rc) throws GameActionException {
@@ -30,6 +31,14 @@ public class InfoArrayManager {
 
     public void setOurHQLocation(MapLocation loc) throws GameActionException {
         rc.broadcast(OUR_HQ_LOC_SLOT, VectorFunctions.locToInt(loc));
+    }
+    
+    public void setPastrLoc(MapLocation loc) throws GameActionException {
+        rc.broadcast(PASTR_LOC_SLOT, loc.x * 100 + loc.y);
+    }
+    
+    public MapLocation getPastrLoc() throws GameActionException {
+        return new MapLocation(rc.readBroadcast(PASTR_LOC_SLOT) / 100, rc.readBroadcast(PASTR_LOC_SLOT) % 100);
     }
     
     public void setEnemyHQLocation(MapLocation loc) throws GameActionException {
