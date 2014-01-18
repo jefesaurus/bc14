@@ -79,6 +79,7 @@ public abstract class BaseRobot {
                 // Main Run Call
                 run();
 
+
                 // Check if we've already run out of bytecodes
                 int bcUsed = Clock.getBytecodeNum();
                 if (bcUsed < GameConstants.FREE_BYTECODES) {

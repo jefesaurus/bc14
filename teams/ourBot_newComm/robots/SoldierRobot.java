@@ -24,10 +24,26 @@ public class SoldierRobot extends BaseRobot {
         SQUADING
     }
     
+    public enum ConstructionState {
+        INIT, 
+        MOVE_TO_COARSE_LOC, 
+        MOVE_TO_EXACT_LOC
+    }
+    
+    
     static int pathCreatedRound = -1;
     int squadNum = 0;
     Command currentCommand;
     public final BehaviorState state;
+    
+    //PASTR and NOISETOWER vars
+    public final int FUZZY_BUILDING_PLACEMENT = 5;
+    public ConstructionState cstate;
+    public MapLocation adjacent;
+    public MapLocation tower_loc;
+    public MapLocation pastr_loc;
+    
+    
     public SoldierRobot(RobotController rc) throws GameActionException {
         super(rc);          
         squadNum = comms.getNewSpawnSquad();
@@ -35,16 +51,15 @@ public class SoldierRobot extends BaseRobot {
         nav.setNavigationMode(NavigationMode.BUG);
         
         if (Clock.getRoundNum() < GameConstants.HQ_SPAWN_DELAY_CONSTANT_1) {
-            System.out.println("PASTR " + rc.getRobot().getID());
             state = BehaviorState.BUILD_PASTR;
+            cstate = ConstructionState.INIT;
         } 
         else if (Clock.getRoundNum() < 2*GameConstants.HQ_SPAWN_DELAY_CONSTANT_1) {
             state = BehaviorState.BUILD_NOISE_TOWER;
-            System.out.println("NOISE TOWER " + rc.getRobot().getID());
+            cstate = ConstructionState.INIT;
         }
         else {
             state = BehaviorState.SQUADING;
-            System.out.println("SQUADING " + rc.getRobot().getID());
         }
     }
 
@@ -79,65 +94,77 @@ public class SoldierRobot extends BaseRobot {
             }
             break;
         case BUILD_PASTR:
-            rc.setIndicatorString(2, "COWGROWTH COMPUTATION");
-            MapLocation pastr_loc = rc.getLocation();//new CowGrowth(rc).getBestLocation();
-            rc.setIndicatorString(2, "DONE WITH COWGROWTH COMPUTATION");
-            comms.setPastrLoc(pastr_loc);
-            nav.setDestination(pastr_loc);
-            
-            while (rc.getLocation().distanceSquaredTo(pastr_loc) > 5) {
-                Direction toMove = nav.navigateToDestination();
-                if (toMove != null) {
-                    simpleMove(toMove, rc);
+            switch (this.cstate) {
+            case INIT: 
+                rc.setIndicatorString(2, "COWGROWTH COMPUTATION");
+                //this.pastr_loc = new CowGrowth(rc).getBestLocation();
+                //this.pastr_loc = rc.getLocation();
+                this.pastr_loc = new MapLocation(40,32);
+                rc.setIndicatorString(2, "DONE WITH COWGROWTH COMPUTATION");
+                comms.setPastrLoc(pastr_loc);
+                nav.setDestination(pastr_loc);
+                this.cstate = ConstructionState.MOVE_TO_COARSE_LOC;
+                break;
+                
+            case MOVE_TO_COARSE_LOC:
+                
+                if (rc.getLocation().distanceSquaredTo(pastr_loc) > FUZZY_BUILDING_PLACEMENT) {
+                    Direction toMove = nav.navigateToDestination();
+                    if (toMove != null) {
+                        simpleMove(toMove, rc);
+                    }
+                } else {
+                    comms.setPastrLoc(rc.getLocation());
+                    this.cstate = ConstructionState.MOVE_TO_EXACT_LOC;
                 }
-                rc.yield();
-            }
-            
-            comms.setPastrLoc(rc.getLocation());
-            
-            while (true) {
+                break;
+                
+            case MOVE_TO_EXACT_LOC: 
+                
                 if (rc.isActive()) {
                     rc.construct(RobotType.PASTR);
                     break;
-                }
-                rc.yield();
+                }  
+                
             }
             break;
         case BUILD_NOISE_TOWER:
-            rc.setIndicatorString(2, "NOISE TOWA");
-            MapLocation tower_loc = comms.getPastrLoc();
-            System.out.println("tower_loc: " + tower_loc);
-            nav.setDestination(tower_loc); 
-            rc.setIndicatorString(2, "NOISE TOWA: " + tower_loc.toString());
-            
-            while (rc.getLocation().distanceSquaredTo(tower_loc) > 5) {
-                Direction toMove1 = nav.navigateToDestination();
-                if (toMove1 != null) {
-                    simpleMove(toMove1, rc);
+            switch (this.cstate) {
+            case INIT:
+                tower_loc = comms.getPastrLoc();
+                nav.setDestination(tower_loc); 
+                rc.setIndicatorString(2, "NOISE TOWA: " + tower_loc.toString());
+                this.cstate = ConstructionState.MOVE_TO_COARSE_LOC;
+                break;  
+            case MOVE_TO_COARSE_LOC:
+                if (rc.getLocation().distanceSquaredTo(tower_loc) > FUZZY_BUILDING_PLACEMENT) {
+                    Direction toMove1 = nav.navigateToDestination();
+                    if (toMove1 != null) {
+                        simpleMove(toMove1, rc);
+                    }
+                } else {
+                    rc.setIndicatorString(2, "found adjacent square");
+                    adjacent = comms.getPastrLoc();
+                    adjacent = findAdjacentSquare(adjacent);
+                    nav.setDestination(adjacent);
+                    this.cstate = ConstructionState.MOVE_TO_EXACT_LOC;
                 }
-                rc.yield();
-            }
-            
-            MapLocation adjacent = comms.getPastrLoc();
-            adjacent = findAdjacentSquare(adjacent);
-            nav.setDestination(adjacent);
-            rc.setIndicatorString(2, "NOISE TOWA Adjacent square: " + adjacent.toString() + "nav destination: " + nav.getDestination().toString());
-            while (rc.getLocation() != adjacent) {
-                Direction toMove2 = nav.navigateToDestination();
-                if (toMove2 != null) {
-                    simpleMove(toMove2, rc);
+                break;
+            case MOVE_TO_EXACT_LOC:
+                if (!rc.getLocation().equals(adjacent)) {
+                    rc.setIndicatorString(2, "curloc: " + rc.getLocation().toString() + "adjacent: " + adjacent.toString());
+                    Direction toMove2 = nav.navigateToDestination();
+                    if (toMove2 != null) {
+                        simpleMove(toMove2, rc);
+                    }
+                } else {
+                    if (rc.isActive()) {
+                        rc.setIndicatorString(2, "building noisetower");
+                        rc.construct(RobotType.NOISETOWER);
+                    }
                 }
-                rc.yield();
+                break;
             }
-            
-            while (true) {
-                if (rc.isActive()) {
-                    rc.construct(RobotType.NOISETOWER);
-                    break;
-                }
-                rc.yield();
-            }
-            break;
         }
     }
     

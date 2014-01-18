@@ -1,8 +1,8 @@
 package ourBot_newComm.robots;
 
-import battlecode.common.*;
-import java.lang.Math;
-
+import battlecode.common.GameActionException;
+import battlecode.common.MapLocation;
+import battlecode.common.RobotController;
 
 public class NoiseTower extends BaseRobot {
     
@@ -16,18 +16,77 @@ public class NoiseTower extends BaseRobot {
     }
     
     public HerdingMethod method;
-    public MapLocation lastAttack;
     public int rangeSquared;
     public int range;
     MapLocation[] linearLocs;
-    MapLocation[][] bresenhamLines;
     public NoiseTower(RobotController rc) throws GameActionException {
         super(rc);
-        lastAttack = null;
         rangeSquared = rc.getType().attackRadiusMaxSquared;
         range = (int) Math.sqrt(rangeSquared);
         setHerdingMethod(HerdingMethod.LINEAR);
     }
+    
+    @Override
+    public void run() throws GameActionException {
+        switch (this.method) {
+        case RADIAL:
+            break;
+        case LINEAR:
+            rc.setIndicatorString(2, "running");
+            int x1 = rc.getLocation().x;
+            int y1 = rc.getLocation().y;
+            for (int i=8; --i>=0;) {
+                //Bresenham Line Calculation
+                int x=linearLocs[i].x;
+                int y=linearLocs[i].y;
+                int dx = Math.abs(x1 - x);
+                int dy = Math.abs(y1 - y);
+                int x_step = (x > x1) ? -1 : 1;
+                int y_step = (y > y1) ? -1 : 1;
+                if (dx > dy) {
+                    int err = dx;
+                    while (x != x1) {
+                        while (true) {
+                            if (rc.isActive()) {
+                                rc.attackSquare(new MapLocation(x,y));
+                                break;
+                            }
+                            rc.yield();
+                        }
+                    err -= 2*dy;
+                    if (err < 0) {
+                        y += y_step;
+                        err += 2*dx;
+                    }
+                    x += x_step;
+                    rc.yield();
+                  }
+                } else {
+                    int err = dy;
+                    while (y != y1) {
+                        while (true) {
+                            if (rc.isActive()) {
+                                rc.attackSquare(new MapLocation(x,y));
+                                break;
+                            }
+                            rc.yield();
+                        }
+                    err -= 2*dx;
+                    if (err < 0) {
+                        x += x_step;
+                        err += 2*dy;
+                    }
+                    y += y_step;
+                    rc.yield();
+                  }
+                }
+              }
+            break;
+        case PATHING:
+            break;
+        } 
+    }
+
     
     public void setHerdingMethod(HerdingMethod method) {
         this.method = method;
@@ -60,7 +119,8 @@ public class NoiseTower extends BaseRobot {
     }
     
     private void cleanLinearLocs() {
-        for (int i=7; --i>=0;) {
+
+        for (int i=8; --i>=0;) {
             if (this.linearLocs[i].x < 0) {
                 this.linearLocs[i] = new MapLocation(0, this.linearLocs[i].y);
             }
@@ -97,67 +157,6 @@ public class NoiseTower extends BaseRobot {
                     this.linearLocs[i] = new MapLocation(this.linearLocs[i].x + 1, this.linearLocs[i].y + 1);
                 }
             }
-        }
+        }  
     }
-    
-    public void run() throws GameActionException {
-        while (true) {
-            switch (this.method) {
-            case RADIAL:
-                return;
-            case LINEAR:
-                int x1 = rc.getLocation().x;
-                int y1 = rc.getLocation().y;
-                for (int i=7; --i>=0;) {
-                    //Bressenham Line Calculation
-                    int x=linearLocs[i].x;
-                    int y=linearLocs[i].y;
-                    int dx = Math.abs(x1 - x);
-                    int dy = Math.abs(y1 - y);
-                    int x_step = (x > x1) ? -1 : 1;
-                    int y_step = (y > y1) ? -1 : 1;
-                    if (dx > dy) {
-                        int err = dx;
-                        while (x != x1) {
-                            while (true) {
-                                if (rc.isActive()) {
-                                    rc.attackSquare(new MapLocation(x,y));
-                                    break;
-                                }
-                                rc.yield();
-                            }
-                        err -= 2*dy;
-                        if (err < 0) {
-                            y += y_step;
-                            err += 2*dx;
-                        }
-                        x += x_step;
-                        rc.yield();
-                      }
-                    } else {
-                        int err = dy;
-                        while (y != y1) {
-                            while (true) {
-                                if (rc.isActive()) {
-                                    rc.attackSquare(new MapLocation(x,y));
-                                    break;
-                                }
-                                rc.yield();
-                            }
-                        err -= 2*dx;
-                        if (err < 0) {
-                            x += x_step;
-                            err += 2*dy;
-                        }
-                        y += y_step;
-                        rc.yield();
-                      }
-                    }
-                  }
-            case PATHING:
-                return;
-            }
-        }
-    }
-
 }

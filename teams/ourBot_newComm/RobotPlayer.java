@@ -6,6 +6,7 @@ import ourBot_newComm.robots.NoiseTower;
 import ourBot_newComm.robots.SoldierRobot;
 import ourBot_newComm.robots.Pastr;
 import battlecode.common.RobotController;
+import battlecode.common.RobotType;
 
 public class RobotPlayer {
     public static void run(RobotController rc) {
@@ -21,8 +22,10 @@ public class RobotPlayer {
                 break;
             case NOISETOWER:
                 br = new NoiseTower(rc);
+                break;
             case PASTR:
                 br = new Pastr(rc);
+                break;
             default:
                 break;
             }

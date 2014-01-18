@@ -6,26 +6,41 @@ public class CowGrowth {
     
     private static RobotController rc;
     public static double[][] cowGrowth;
-    public static int bigBoxSize=8; //Magic Number
+    public static int bigBoxSize=50; //Magic Number
     public static double[][] coarseCowGrowth;
     public static double[][] finalLocations;
+    public static double[][] test = new double[100][100];
     
     public CowGrowth(RobotController rci){
         rc = rci;
         cowGrowth = rc.senseCowGrowth();
     }
     
+    private static MapLocation windowPeakFinding(double[][] grid, int xs, int ys, int xf, int yf) {
+        int xmid = (xs + xf) / 2;
+        int ymid = (ys + yf) / 2;
+        int xmax, ymax;
+        for (int i=xs; i<=xf; i++) {
+            
+        }
+    }
+    
     public static void assessCowGrowth() {
         int width = rc.getMapWidth()/bigBoxSize;
         int height = rc.getMapHeight()/bigBoxSize;
+        System.out.println("width " + width + " height " + height);
         coarseCowGrowth = new double[width][height];
-        
+        System.out.println("assessing cow growth");
         for(int x=width*bigBoxSize;--x>=0;x++){
             for(int y=height*bigBoxSize;--y>=0;){
-                coarseCowGrowth[x/bigBoxSize][y/bigBoxSize]+=cowGrowth[x][y];
+                System.out.println("Beg: " + Clock.getBytecodeNum());
+                test[x][y] = 1.0;
+                //coarseCowGrowth[x/bigBoxSize][y/bigBoxSize]+=cowGrowth[x][y];
+                System.out.println("End: " + Clock.getBytecodeNum());
             }
         }
-        
+        System.out.println("done assessing cow growth");
+        System.out.println("rolling hash");
         finalLocations = new double[width][height];
         for (int x=width;--x>=0;) {
             for (int y=height;--y>=0;) {
@@ -52,6 +67,7 @@ public class CowGrowth {
         
         int finalx =-1, finaly=-1;
         double maxGrowth = -1.0;
+        
         for (int x=rc.getMapWidth()/bigBoxSize; --x>=0;) {
             for (int y=rc.getMapHeight()/bigBoxSize; --y>=0;) {
                 if (maxGrowth < finalLocations[x][y]) {

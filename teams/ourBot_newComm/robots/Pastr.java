@@ -8,6 +8,7 @@ public class Pastr extends BaseRobot {
         super(rc);
     }
     
+    @Override
     public void run() throws GameActionException {
         
     }

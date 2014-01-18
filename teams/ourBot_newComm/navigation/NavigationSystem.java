@@ -246,9 +246,9 @@ public class NavigationSystem {
     /** This is private because it needs the state of the navigator to work. */
     private Direction navigateBug() {
         normalBug.edgeXMin = 0;
-        normalBug.edgeXMax = rc.getMapWidth();
+        normalBug.edgeXMax = rc.getMapWidth()-1;
         normalBug.edgeYMin = 0;
-        normalBug.edgeYMax = rc.getMapHeight();
+        normalBug.edgeYMax = rc.getMapHeight()-1;
         boolean movable[] = new boolean[8];
         for(int i=0; i<8; i++) {
             Direction dir = Direction.values()[i];
