@@ -61,6 +61,10 @@ public class HQRobot extends BaseRobot {
                 comms.setNewSpawnSquad(currentSquadNum);
                 comms.sendSquadCommand(currentSquadNum++, new Command(CommandType.BUILD_NOISE_TOWER, bestPastrLoc));
                 rc.yield();
+                comms.sendSquadCommand(currentSquadNum, new Command(CommandType.RALLY_POINT, rallyPoint));
+                comms.setNewSpawnSquad(currentSquadNum);
+
+
             }
             
         // If there is one HQ and one soldier
@@ -68,8 +72,6 @@ public class HQRobot extends BaseRobot {
             //after telling them where to go, consider spawning
             if (tryToSpawn(directionToEnemyHQ)) {
                 System.out.println("Did spawnwith squad num: " + currentSquadNum);
-                comms.setNewSpawnSquad(currentSquadNum);
-                comms.sendSquadCommand(currentSquadNum, new Command(CommandType.RALLY_POINT, bestPastrLoc));
                 rc.yield();
             }
         }
