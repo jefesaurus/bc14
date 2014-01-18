@@ -58,7 +58,7 @@ public class CowGrowth {
                 }
             }
         }
-        printCoarseMap(finalLocations);
+        //printCoarseMap(finalLocations);
     }
     
     private static boolean isValid(int x, int y, int width, int height) {

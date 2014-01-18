@@ -372,12 +372,12 @@ public class SoldierRobot extends BaseRobot {
             // Retreat away or home
             Direction toMove = this.curLoc.directionTo(this.myHQ);
             rc.setIndicatorString(0, "retreating because enemy hq or unit disad");
-            simpleMove(toMove);
+            simpleBug(this.myHQ);
         } else if(healthDisadvantage) {
             // Retreat to center of allies
             Direction toMove = this.curLoc.directionTo(allyCentroid);
             rc.setIndicatorString(0, "retreating because health disad");
-            simpleMove(toMove);
+            simpleBug(this.myHQ);
         }
 
         if (lowestHealthAttackableSoldier != null) {
@@ -391,17 +391,27 @@ public class SoldierRobot extends BaseRobot {
         } else if (unitDisadvantage < 0 && !enemyHQInSight) {
             //Strong enough support, lets advance
             rc.setIndicatorString(0, "Advancing");
+            if (pastrLoc != null) {
+                if (rc.canAttackSquare(pastrLoc)) {
+                    if (rc.isActive()) {
+                        rc.attackSquare(pastrLoc);
+                    }
+                } else {
+                    simpleBug(pastrLoc);
+                }
+            }
 
             Direction toEnemy = this.curLoc.directionTo(enemyCentroid);//.rotateLeft();
 
             // If we are nearer to the enemy than the rest of our squad, then veer off sideways
             // To allow them to catch up and to aid concavity
-            if (this.curLoc.distanceSquaredTo(enemyCentroid) < allyCentroid.distanceSquaredTo(enemyCentroid)) {
+            /**if (this.curLoc.distanceSquaredTo(enemyCentroid) < allyCentroid.distanceSquaredTo(enemyCentroid)) {
                 // TODO make sure this is actually functioning like it is supposed to
                 simpleMoveVeerOff(toEnemy);
             } else {
                 simpleBug(enemyCentroid);
-            }
+            }**/
+            simpleBug(enemyCentroid);
             
         } else {
             rc.setIndicatorString(0, "Yielding");
