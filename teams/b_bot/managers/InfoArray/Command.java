@@ -32,11 +32,12 @@ public class Command implements ArrayPackable {
     public String toString() {
         String mapLoc = this.loc.toString();
         switch (this.type) {
-        case RALLY_POINT: return "RALLY POINT: " + mapLoc;
-        case ATTACK_POINT:  return "ATTACK POINT: " + mapLoc;
-        case PASTR_POINT:  return "PASTR POINT: " + mapLoc;
-        case BUILD_PASTR: return "BUILD PASTR: " + mapLoc;
-        case BUILD_NOISE_TOWER: return "BUILD NOISE TOWER: " + mapLoc;
+        case RALLY_POINT: return "RALLY_POINT: " + mapLoc;
+        case ATTACK_POINT:  return "ATTACK_POINT: " + mapLoc;
+        case DEFEND_PASTR:  return "DEFEND_PASTR: " + mapLoc;
+        case ATTACK_PASTR:  return "ATTACK_PASTR: " + mapLoc;
+        case BUILD_PASTR: return "BUILD_PASTR: " + mapLoc;
+        case BUILD_NOISE_TOWER: return "BUILD_NOISE_TOWER: " + mapLoc;
         }
         return null;
     }

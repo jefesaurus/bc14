@@ -1,12 +1,9 @@
 package b_bot.robots;
 
-import b_bot.util.Util;
 import b_bot.Constants;
-import b_bot.managers.InfoCache;
 import b_bot.managers.InfoArray.Command;
 import b_bot.navigation.NavigationMode;
-import b_bot.util.*;
-import battlecode.common.Clock;
+import b_bot.util.Util;
 import battlecode.common.Direction;
 import battlecode.common.GameActionException;
 import battlecode.common.MapLocation;
@@ -14,137 +11,117 @@ import battlecode.common.Robot;
 import battlecode.common.RobotController;
 import battlecode.common.RobotInfo;
 import battlecode.common.RobotType;
-import battlecode.common.GameConstants;
 import battlecode.common.TerrainTile;
 
 public class SoldierRobot extends BaseRobot {
-    
+
     public enum BehaviorState {
         BUILD_PASTR,
         BUILD_NOISE_TOWER,
-        SQUADING
+        SQUADING,
+        ATTACKING_PASTR,
+        DEFENDING_PASTR
     }
-    
+
     public enum ConstructionState {
         INIT, 
         MOVE_TO_COARSE_LOC, 
         MOVE_TO_EXACT_LOC
     }
-    
-    
+
+
     static int pathCreatedRound = -1;
     int squadNum = 0;
     Command currentCommand;
-    public final BehaviorState state;
-    
+
     //PASTR and NOISETOWER vars
     public final int FUZZY_BUILDING_PLACEMENT = 5;
     public ConstructionState cstate;
     public MapLocation adjacent;
     public MapLocation tower_loc;
     public MapLocation pastr_loc;
-    
-    
+
+
     public SoldierRobot(RobotController rc) throws GameActionException {
         super(rc);          
         squadNum = comms.getNewSpawnSquad();
+        currentCommand = comms.getSquadCommand(squadNum);
         rc.setIndicatorString(1, "Squad: " + squadNum);
         nav.setNavigationMode(NavigationMode.BUG);
-        
-        if (Clock.getRoundNum() < GameConstants.HQ_SPAWN_DELAY_CONSTANT_1) {
-            state = BehaviorState.BUILD_PASTR;
-            cstate = ConstructionState.INIT;
-        } 
-        else if (Clock.getRoundNum() < 2*GameConstants.HQ_SPAWN_DELAY_CONSTANT_1) {
-            state = BehaviorState.BUILD_NOISE_TOWER;
-            cstate = ConstructionState.INIT;
-        }
-        else {
-            state = BehaviorState.SQUADING;
-        }
+        cstate = ConstructionState.INIT;
     }
 
     @Override
     public void run() throws GameActionException {
-      //follow orders from HQ
-        switch(this.state) {
-        case SQUADING:
-            currentCommand = comms.getSquadCommand(squadNum);
-            rc.setIndicatorString(2, currentCommand.toString());
-    
-            Robot[] nearbyEnemies = rc.senseNearbyGameObjects(Robot.class, 100000, rc.getTeam().opponent());
-                    
-            if(nearbyEnemies.length > 0){
+        currentCommand = comms.getSquadCommand(squadNum);
+        rc.setIndicatorString(2, currentCommand.toString());
+        Robot[] nearbyEnemies = rc.senseNearbyGameObjects(Robot.class, 100000, rc.getTeam().opponent());
+        MapLocation destination = currentCommand.loc;
+
+
+        switch (currentCommand.type) {
+        case RALLY_POINT:
+        case ATTACK_POINT:
+            if(nearbyEnemies.length > 0) {
                 if (rc.isActive()) {
                     offensiveMicro(nearbyEnemies);
                 }
             } else {
-                MapLocation destination;
-                switch (currentCommand.type) {
-                case RALLY_POINT:
-                case ATTACK_POINT:
-                case PASTR_POINT:
-                default:
-                    destination = currentCommand.loc;
-                }
-                nav.setDestination(destination);
-                Direction toMove = nav.navigateToDestination();
-                if (toMove != null) {
-                    simpleMove(toMove);
-                }
+                simpleBug(destination);
             }
             break;
+
+        case ATTACK_PASTR:
+            if(nearbyEnemies.length > 0) {
+                if (rc.isActive()) {
+                    offensiveMicro(nearbyEnemies);
+                }
+            } else {
+                simpleBug(destination);
+            }
+            break;
+
+        case DEFEND_PASTR:
         case BUILD_PASTR:
             switch (this.cstate) {
             case INIT: 
-                rc.setIndicatorString(2, "COWGROWTH COMPUTATION");
-                //this.pastr_loc = new CowGrowth(rc).getBestLocation();
-                //this.pastr_loc = rc.getLocation();
-                this.pastr_loc = new MapLocation(40,32);
-                rc.setIndicatorString(2, "DONE WITH COWGROWTH COMPUTATION");
-                comms.setPastrLoc(pastr_loc);
-                nav.setDestination(pastr_loc);
+                nav.setDestination(destination);
                 this.cstate = ConstructionState.MOVE_TO_COARSE_LOC;
                 break;
-                
+
             case MOVE_TO_COARSE_LOC:
-                
-                if (rc.getLocation().distanceSquaredTo(pastr_loc) > FUZZY_BUILDING_PLACEMENT) {
+                if (this.curLoc.distanceSquaredTo(destination) > FUZZY_BUILDING_PLACEMENT) {
                     Direction toMove = nav.navigateToDestination();
                     if (toMove != null) {
                         simpleMove(toMove);
                     }
                 } else {
-                    comms.setPastrLoc(rc.getLocation());
+                    comms.setPastrLoc(this.curLoc);
                     this.cstate = ConstructionState.MOVE_TO_EXACT_LOC;
                 }
                 break;
-                
+
             case MOVE_TO_EXACT_LOC: 
-                
                 if (rc.isActive()) {
                     rc.construct(RobotType.PASTR);
                     break;
                 }  
-                
+
             }
             break;
         case BUILD_NOISE_TOWER:
             switch (this.cstate) {
             case INIT:
-                tower_loc = comms.getPastrLoc();
-                nav.setDestination(tower_loc); 
-                rc.setIndicatorString(2, "NOISE TOWA: " + tower_loc.toString());
+                nav.setDestination(destination); 
                 this.cstate = ConstructionState.MOVE_TO_COARSE_LOC;
                 break;  
             case MOVE_TO_COARSE_LOC:
-                if (rc.getLocation().distanceSquaredTo(tower_loc) > FUZZY_BUILDING_PLACEMENT) {
+                if (this.curLoc.distanceSquaredTo(destination) > FUZZY_BUILDING_PLACEMENT) {
                     Direction toMove1 = nav.navigateToDestination();
                     if (toMove1 != null) {
                         simpleMove(toMove1);
                     }
                 } else {
-                    rc.setIndicatorString(2, "found adjacent square");
                     adjacent = comms.getPastrLoc();
                     adjacent = findAdjacentSquare(adjacent);
                     nav.setDestination(adjacent);
@@ -152,23 +129,25 @@ public class SoldierRobot extends BaseRobot {
                 }
                 break;
             case MOVE_TO_EXACT_LOC:
-                if (!rc.getLocation().equals(adjacent)) {
-                    rc.setIndicatorString(2, "curloc: " + rc.getLocation().toString() + "adjacent: " + adjacent.toString());
+                if (!this.curLoc.equals(adjacent)) {
                     Direction toMove2 = nav.navigateToDestination();
                     if (toMove2 != null) {
                         simpleMove(toMove2);
                     }
                 } else {
                     if (rc.isActive()) {
-                        rc.setIndicatorString(2, "building noisetower");
                         rc.construct(RobotType.NOISETOWER);
                     }
                 }
                 break;
+            default:
+                break;
             }
         }
+        rc.yield();
+
     }
-    
+
     private MapLocation findAdjacentSquare(MapLocation loc) {
         Direction dir = Direction.values()[(int) (Util.randDouble() * 8)];
         MapLocation curLoc = loc.add(dir);
@@ -179,16 +158,16 @@ public class SoldierRobot extends BaseRobot {
         return curLoc;
     }
 
-    
+
     public void simpleBug(MapLocation destination) throws GameActionException {
         nav.setDestination(destination);
         Direction toMove = nav.navigateToDestination();
         if (toMove != null) {
             simpleMove(toMove);
         }
-        
+
     }
-    
+
     protected void simpleMove(Direction chosenDirection) throws GameActionException{
         if(chosenDirection == Direction.OMNI || chosenDirection == Direction.NONE){
             rc.yield();
@@ -211,7 +190,7 @@ public class SoldierRobot extends BaseRobot {
             }
         }
     }
-    
+
     protected void simpleMoveVeerOff(Direction chosenDirection) throws GameActionException{
         if(rc.isActive()){
             int forwardInt;
@@ -226,22 +205,20 @@ public class SoldierRobot extends BaseRobot {
             }
         }
     } 
-    
-    
-    
+
+
+
     /*
      * BATTLE MICRO
      */
-    
+
     public void offensiveMicro(Robot[] nearbyEnemies) throws GameActionException {
         // Enemy unittype counters
-        int numEnemies = nearbyEnemies.length;
         boolean enemyHQInSight = false;
         boolean enemyHQInRange = false;
 
         int numEnemySoldiers = 0;
-        int numEnemyPastrs = 0;
-        int numEnemyNoiseTowers = 0;
+
 
         // Useful metrics
         double enemyNumHits = 0;
@@ -276,12 +253,10 @@ public class SoldierRobot extends BaseRobot {
                 break;
 
             case PASTR:
-                numEnemyPastrs++;
                 pastrLoc = info.location;
                 break;
 
             case NOISETOWER:
-                numEnemyNoiseTowers++;
                 towerLoc = info.location;
                 break;
 
@@ -298,16 +273,13 @@ public class SoldierRobot extends BaseRobot {
             }
         }
         MapLocation enemyCentroid;
-        
+
         if (numEnemySoldiers > 0) {
             // Finalize the averaged metrics
             enemyCentroid = new MapLocation(enemyCentroidX/numEnemySoldiers, enemyCentroidY/numEnemySoldiers);
         } else {
             enemyCentroid = this.enemyHQ;
         }
-
-
-
 
 
         Robot[] allies = rc.senseNearbyGameObjects(Robot.class, Constants.SOLDIER_SIGHT_RANGE, rc.getTeam());
@@ -333,8 +305,6 @@ public class SoldierRobot extends BaseRobot {
                 allyNumHits += 1 + (int)(info.health/RobotType.SOLDIER.attackPower);
             } else if(info.type == RobotType.HQ) {
                 numAllySoldiers++;
-                //allyCentroidX += 3*info.location.x; // HQ counts as 3 allied soldiers
-                //allyCentroidY += 3*info.location.y;
             }
         }
 
@@ -346,13 +316,13 @@ public class SoldierRobot extends BaseRobot {
         } else {
             allyCentroid = this.curLoc;
         }
-        
+
         boolean enemyHQPastrCombo = enemyHQInSight && (pastrLoc != null) && (this.enemyHQ.distanceSquaredTo(pastrLoc) < 9);
         int unitDisadvantage = numEnemySoldiers - numAllySoldiers;
         boolean healthDisadvantage = rc.getHealth() < allyAverageSoldierHealth;
-        
-        
-        
+
+
+
         // Retreat logic:
         // Only attack HQ pastr combo if we have unit parity/advantage
         if (enemyHQPastrCombo) {
@@ -366,8 +336,8 @@ public class SoldierRobot extends BaseRobot {
             } else {
                 simpleBug(this.myHQ);
             }
-            
-        // If we are in HQ range but there is no pastr, or we have a unit disdvantage, we need to bounce
+
+            // If we are in HQ range but there is no pastr, or we have a unit disdvantage, we need to bounce
         } else if(enemyHQInRange || unitDisadvantage > 0) {
             // Retreat away or home
             Direction toMove = this.curLoc.directionTo(this.myHQ);
@@ -390,18 +360,21 @@ public class SoldierRobot extends BaseRobot {
             // TODO tune what we consider a good enough advantage
         } else if (unitDisadvantage < 0 && !enemyHQInSight) {
             //Strong enough support, lets advance
-            rc.setIndicatorString(0, "Advancing");
+            
+            if(pastrLoc != null) {
+                if (rc.isActive() && rc.canAttackSquare(pastrLoc)) {
+                    rc.attackSquare(pastrLoc);
+                } else {
+                    rc.setIndicatorString(0, "Advancing to enemy pastr");
 
-            Direction toEnemy = this.curLoc.directionTo(enemyCentroid).rotateLeft();
-
-            // If we are nearer to the enemy than the rest of our squad, then veer off sideways
-            // To allow them to catch up and to aid concavity
-            if (this.curLoc.distanceSquaredTo(enemyCentroid) < allyCentroid.distanceSquaredTo(enemyCentroid)) {
-                // TODO make sure this is actually functioning like it is supposed to
-                simpleMoveVeerOff(toEnemy);
+                    simpleBug(pastrLoc);
+                }
             } else {
-                simpleMove(toEnemy);
+                rc.setIndicatorString(0, "Advancing to enemy");
+
+                simpleBug(enemyCentroid);
             }
+
         } else {
             rc.setIndicatorString(0, "Yielding");
 

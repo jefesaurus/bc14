@@ -22,7 +22,7 @@ public class InfoArrayManager {
     static final int NEW_SPAWN_SQUAD_SLOT = ENEMY_HQ_LOC_SLOT + 1;
     static final int GLOBAL_COMMAND_SLOT = ENEMY_HQ_LOC_SLOT + 1;
     static final int SQUAD_COMMAND_SLOTS = GLOBAL_COMMAND_SLOT + Command.packedSize;
-    static final int PASTR_LOC_SLOT = 1000;
+    static final int PASTR_LOC_SLOT = 1000 ;
 
 
     public InfoArrayManager(RobotController rc) throws GameActionException {
