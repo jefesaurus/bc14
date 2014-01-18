@@ -45,7 +45,7 @@ public class NoiseTower extends BaseRobot {
                 int y_step = (y > y1) ? -1 : 1;
                 if (dx > dy) {
                     int err = dx;
-                    while (x != x1) {
+                    while (new MapLocation(x,y).distanceSquaredTo(rc.getLocation()) > 6) {
                         while (true) {
                             if (rc.isActive()) {
                                 rc.attackSquare(new MapLocation(x,y));
@@ -63,7 +63,7 @@ public class NoiseTower extends BaseRobot {
                   }
                 } else {
                     int err = dy;
-                    while (y != y1) {
+                    while (new MapLocation(x,y).distanceSquaredTo(rc.getLocation()) > 6) {
                         while (true) {
                             if (rc.isActive()) {
                                 rc.attackSquare(new MapLocation(x,y));

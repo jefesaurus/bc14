@@ -1,59 +1,72 @@
 package b_bot.util;
 
-import battlecode.common.*;
+import b_bot.robots.BaseRobot;
+import battlecode.common.RobotController;
+import battlecode.common.MapLocation;
 
 public class CowGrowth {
     
-    private static RobotController rc;
-    public static double[][] cowGrowth;
-    public static int bigBoxSize=50; //Magic Number
-    public static double[][] coarseCowGrowth;
-    public static double[][] finalLocations;
-    public static double[][] test = new double[100][100];
+    private RobotController rc;
+    public double[][] cowGrowth;
+    public int bigBoxSize = 5;
+    public double[][] coarseCowGrowth;
+    public double[][] finalLocations;
+    public final BaseRobot myBot;
     
-    public CowGrowth(RobotController rci){
+    public CowGrowth(RobotController rci, BaseRobot myBot){
         rc = rci;
+        this.myBot = myBot;
         cowGrowth = rc.senseCowGrowth();
     }
-
     
-    public static void assessCowGrowth() {
+    public  void printCoarseMap(double[][] coarseMap){
+        System.out.println("Coarse map:");
+        for(int x=0;x<coarseMap[0].length;x++){
+            for(int y=0;y<coarseMap.length;y++){
+                double numberOfObstacles = coarseMap[x][y];
+                System.out.print(Math.min(numberOfObstacles, 999) + " ");
+            }
+            System.out.println();
+        }
+    }
+    
+    public void assessCowGrowth() {
         int width = rc.getMapWidth()/bigBoxSize;
         int height = rc.getMapHeight()/bigBoxSize;
-        System.out.println("width " + width + " height " + height);
         coarseCowGrowth = new double[width][height];
-        System.out.println("assessing cow growth");
-        for(int x=width*bigBoxSize;--x>=0;x++){
+
+        for(int x=width*bigBoxSize;--x>=0;){
+            int x_bigBox = x/bigBoxSize;
             for(int y=height*bigBoxSize;--y>=0;){
-                System.out.println("Beg: " + Clock.getBytecodeNum());
-                test[x][y] = 1.0;
-                //coarseCowGrowth[x/bigBoxSize][y/bigBoxSize]+=cowGrowth[x][y];
-                System.out.println("End: " + Clock.getBytecodeNum());
+                //System.out.println("Beg: " + Clock.getBytecodeNum());
+                //test[x][y] = 1.0;
+                coarseCowGrowth[x_bigBox][y/bigBoxSize]+= (cowGrowth[x][y] / (500 + myBot.myHQ.distanceSquaredTo(new MapLocation(x,y)))) * (500 + myBot.enemyHQ.distanceSquaredTo(new MapLocation(x,y)));
+                //System.out.println("End: " + Clock.getBytecodeNum());
             }
         }
-        System.out.println("done assessing cow growth");
-        System.out.println("rolling hash");
+
         finalLocations = new double[width][height];
         for (int x=width;--x>=0;) {
             for (int y=height;--y>=0;) {
                 //Add all adjacent squares
                 for (int j=-1;j<=1;j++) {
                     for (int k=-1; k<=1; k++) {
-                        if (isValid(x+j,y+k)) {
+                        if (isValid(x+j,y+k, width, height)) {
                             finalLocations[x][y] += coarseCowGrowth[x+j][y+k];
                         }
                     }
                 }
             }
         }
+        printCoarseMap(finalLocations);
     }
     
-    private static boolean isValid(int x, int y) {
-        return (x >= 0 && x < rc.getMapWidth() && y >=0 && y < rc.getMapHeight());
+    private static boolean isValid(int x, int y, int width, int height) {
+        return (x >= 0 && x < width && y >=0 && y < height);
     }
     
     //returns the center of the square that has the best location
-    public static MapLocation getBestLocation() {
+    public MapLocation getBestLocation() {
         
         assessCowGrowth();
         

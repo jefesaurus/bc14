@@ -98,9 +98,9 @@ public class SoldierRobot extends BaseRobot {
             switch (this.cstate) {
             case INIT: 
                 rc.setIndicatorString(2, "COWGROWTH COMPUTATION");
-                //this.pastr_loc = new CowGrowth(rc).getBestLocation();
+                this.pastr_loc = new CowGrowth(rc, this).getBestLocation();
                 //this.pastr_loc = rc.getLocation();
-                this.pastr_loc = new MapLocation(40,32);
+                //this.pastr_loc = new MapLocation(40,32);
                 rc.setIndicatorString(2, "DONE WITH COWGROWTH COMPUTATION");
                 comms.setPastrLoc(pastr_loc);
                 nav.setDestination(pastr_loc);
@@ -392,7 +392,7 @@ public class SoldierRobot extends BaseRobot {
             //Strong enough support, lets advance
             rc.setIndicatorString(0, "Advancing");
 
-            Direction toEnemy = this.curLoc.directionTo(enemyCentroid).rotateLeft();
+            Direction toEnemy = this.curLoc.directionTo(enemyCentroid);//.rotateLeft();
 
             // If we are nearer to the enemy than the rest of our squad, then veer off sideways
             // To allow them to catch up and to aid concavity
@@ -400,8 +400,9 @@ public class SoldierRobot extends BaseRobot {
                 // TODO make sure this is actually functioning like it is supposed to
                 simpleMoveVeerOff(toEnemy);
             } else {
-                simpleMove(toEnemy);
+                simpleBug(enemyCentroid);
             }
+            
         } else {
             rc.setIndicatorString(0, "Yielding");
 

@@ -15,6 +15,17 @@ public class CowGrowth {
         rc = rci;
         cowGrowth = rc.senseCowGrowth();
     }
+    
+    public static void printCoarseMap(double[][] coarseMap){
+        System.out.println("Coarse map:");
+        for(int x=0;x<coarseMap[0].length;x++){
+            for(int y=0;y<coarseMap.length;y++){
+                double numberOfObstacles = coarseMap[x][y];
+                System.out.print(Math.min(numberOfObstacles, 999) + " ");
+            }
+            System.out.println();
+        }
+    }
 
     
     public static void assessCowGrowth() {
@@ -23,7 +34,7 @@ public class CowGrowth {
         System.out.println("width " + width + " height " + height);
         coarseCowGrowth = new double[width][height];
         System.out.println("assessing cow growth");
-        for(int x=width*bigBoxSize;--x>=0;x++){
+        for(int x=width*bigBoxSize;--x>=0;){
             for(int y=height*bigBoxSize;--y>=0;){
                 System.out.println("Beg: " + Clock.getBytecodeNum());
                 test[x][y] = 1.0;
@@ -46,6 +57,9 @@ public class CowGrowth {
                 }
             }
         }
+        
+        printCoarseMap(finalLocations);
+        
     }
     
     private static boolean isValid(int x, int y) {
