@@ -1,11 +1,11 @@
-package ourBot_newComm.robots;
+package b_bot.robots;
 
-import ourBot_newComm.Constants;
-import ourBot_newComm.managers.InfoCache;
-import ourBot_newComm.managers.InfoArray.Command;
-import ourBot_newComm.managers.InfoArray.CommandType;
-import ourBot_newComm.util.FastSet;
-import ourBot_newComm.util.VectorFunctions;
+import b_bot.Constants;
+import b_bot.managers.InfoCache;
+import b_bot.managers.InfoArray.Command;
+import b_bot.managers.InfoArray.CommandType;
+import b_bot.util.FastSet;
+import b_bot.util.VectorFunctions;
 import battlecode.common.Direction;
 import battlecode.common.GameActionException;
 import battlecode.common.GameConstants;

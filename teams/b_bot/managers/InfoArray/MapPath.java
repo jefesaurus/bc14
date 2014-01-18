@@ -1,8 +1,8 @@
-package ourBot_newComm.managers.InfoArray;
+package b_bot.managers.InfoArray;
 
-import ourBot_newComm.Constants;
-import ourBot_newComm.robots.BaseRobot;
-import ourBot_newComm.util.VectorFunctions;
+import b_bot.Constants;
+import b_bot.robots.BaseRobot;
+import b_bot.util.VectorFunctions;
 import battlecode.common.MapLocation;
 
 public class MapPath implements ArrayPackable  {

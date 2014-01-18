@@ -1,6 +1,6 @@
-package ourBot_newComm.managers.InfoArray;
+package b_bot.managers.InfoArray;
 
-import ourBot_newComm.util.VectorFunctions;
+import b_bot.util.VectorFunctions;
 import battlecode.common.MapLocation;
 
 

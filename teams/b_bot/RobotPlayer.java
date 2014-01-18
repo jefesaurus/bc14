@@ -1,10 +1,10 @@
-package ourBot_newComm;
+package b_bot;
 
-import ourBot_newComm.robots.BaseRobot;
-import ourBot_newComm.robots.HQRobot;
-import ourBot_newComm.robots.NoiseTower;
-import ourBot_newComm.robots.Pastr;
-import ourBot_newComm.robots.SoldierRobot;
+import b_bot.robots.BaseRobot;
+import b_bot.robots.HQRobot;
+import b_bot.robots.NoiseTower;
+import b_bot.robots.Pastr;
+import b_bot.robots.SoldierRobot;
 import battlecode.common.RobotController;
 import battlecode.common.RobotType;
 

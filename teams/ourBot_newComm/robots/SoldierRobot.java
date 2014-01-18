@@ -1,10 +1,9 @@
 package ourBot_newComm.robots;
 
-import ourBot_newComm.BreadthFirst;
-import ourBot_newComm.util.*;
 import ourBot_newComm.managers.InfoCache;
 import ourBot_newComm.managers.InfoArray.Command;
 import ourBot_newComm.navigation.NavigationMode;
+import ourBot_newComm.util.*;
 import battlecode.common.Clock;
 import battlecode.common.Direction;
 import battlecode.common.GameActionException;

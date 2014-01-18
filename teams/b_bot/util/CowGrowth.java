@@ -1,4 +1,4 @@
-package ourBot_newComm.util;
+package b_bot.util;
 
 import battlecode.common.*;
 
