@@ -342,12 +342,12 @@ public class SoldierRobot extends BaseRobot {
             // Retreat away or home
             Direction toMove = this.curLoc.directionTo(this.myHQ);
             rc.setIndicatorString(0, "retreating because enemy hq or unit disad");
-            simpleMove(toMove);
+            simpleBug(this.myHQ);
         } else if(healthDisadvantage) {
             // Retreat to center of allies
             Direction toMove = this.curLoc.directionTo(allyCentroid);
             rc.setIndicatorString(0, "retreating because health disad");
-            simpleMove(toMove);
+            simpleBug(this.myHQ);
         }
 
         if (lowestHealthAttackableSoldier != null) {
@@ -359,8 +359,7 @@ public class SoldierRobot extends BaseRobot {
 
             // TODO tune what we consider a good enough advantage
         } else if (unitDisadvantage < 0 && !enemyHQInSight) {
-            //Strong enough support, lets advance
-            
+            //Strong enough support, lets advance            
             if(pastrLoc != null) {
                 if (rc.isActive() && rc.canAttackSquare(pastrLoc)) {
                     rc.attackSquare(pastrLoc);
