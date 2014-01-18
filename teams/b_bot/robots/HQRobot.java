@@ -4,6 +4,7 @@ import b_bot.Constants;
 import b_bot.managers.InfoCache;
 import b_bot.managers.InfoArray.Command;
 import b_bot.managers.InfoArray.CommandType;
+import b_bot.util.CowGrowth;
 import b_bot.util.FastSet;
 import b_bot.util.VectorFunctions;
 import battlecode.common.Direction;
@@ -20,7 +21,11 @@ public class HQRobot extends BaseRobot {
     static Command[] squadCommands = new Command[999];
     Direction directionToEnemyHQ;
     
-    MapLocation currentPastrTarget = null;
+    // Our favored pastr location
+    MapLocation bestPastrLoc = null;
+ 
+    // Our target in the enemies pastrs
+    MapLocation currPastrTarget = null;
 
     int currentSquadNum = 0;
     
@@ -31,12 +36,11 @@ public class HQRobot extends BaseRobot {
         directionToEnemyHQ = this.myHQ.directionTo(this.enemyHQ);
         
         // Set the new spawn squad
-        comms.setNewSpawnSquad(currentSquadNum);
-        System.out.println("Spawn num: " + currentSquadNum);
-        
+        comms.setNewSpawnSquad(currentSquadNum);        
         // Tell this squad to rally at rallyPoint
         comms.sendSquadCommand(currentSquadNum, new Command(CommandType.RALLY_POINT, myHQ));
         if (tryToSpawn(directionToEnemyHQ)) {
+            System.out.println("Did spawnwith squad num: " + currentSquadNum);
             currentSquadNum ++;            
         }
         rc.yield();
@@ -48,19 +52,26 @@ public class HQRobot extends BaseRobot {
     @Override
     public void run() throws GameActionException {   
         
-        // If only the second will spawn now:
-        if (currentSquadNum == 1) {
-            pastrLoc = new MapLocation(40, 32);
-            comms.sendSquadCommand(0, new Command(CommandType.BUILD_PASTR, pastrLoc));
-            comms.setNewSpawnSquad(currentSquadNum);
-            if (tryToSpawn(myHQ.directionTo(pastrLoc))) {
-                comms.sendSquadCommand(currentSquadNum++, new Command(CommandType.BUILD_NOISE_TOWER, pastrLoc));
+        if (bestPastrLoc == null) {
+            bestPastrLoc = new CowGrowth(rc, this).getBestLocation();
+            comms.sendSquadCommand(0, new Command(CommandType.BUILD_PASTR, bestPastrLoc));
+        } else if (currentSquadNum == 1) {
+            if (tryToSpawn(myHQ.directionTo(bestPastrLoc))) {
+                System.out.println("Did spawnwith squad num: " + currentSquadNum);
+                comms.setNewSpawnSquad(currentSquadNum);
+                comms.sendSquadCommand(currentSquadNum++, new Command(CommandType.BUILD_NOISE_TOWER, bestPastrLoc));
                 rc.yield();
             }
             
         // If there is one HQ and one soldier
         } else {
-            comms.sendSquadCommand(currentSquadNum, new Command(CommandType.RALLY_POINT, pastrLoc));
+            //after telling them where to go, consider spawning
+            if (tryToSpawn(directionToEnemyHQ)) {
+                System.out.println("Did spawnwith squad num: " + currentSquadNum);
+                comms.setNewSpawnSquad(currentSquadNum);
+                comms.sendSquadCommand(currentSquadNum, new Command(CommandType.RALLY_POINT, bestPastrLoc));
+                rc.yield();
+            }
         }
         
 
@@ -76,7 +87,7 @@ public class HQRobot extends BaseRobot {
             // Determine if our current pastr target has been killed while simultaneously finding the next closest one.
             boolean hasKilledTarget = true;
             for (int i = 0; i < enemyPastrs.length; i ++) {
-                if (currentPastrTarget != null && enemyPastrs[i].equals(currentPastrTarget)) {
+                if (currPastrTarget != null && enemyPastrs[i].equals(currPastrTarget)) {
                     // We are already heading towards this one, so lets not so anything else
                     hasKilledTarget = false;
                     break;
@@ -91,15 +102,14 @@ public class HQRobot extends BaseRobot {
             
             if (hasKilledTarget && closestPastr != null) {
                 Command toSend = new Command(CommandType.ATTACK_POINT, closestPastr);
+                currPastrTarget = closestPastr;
                 comms.sendSquadCommand(currentSquadNum, toSend);
                 squadCommands[currentSquadNum] = toSend;
             }
         }
         
 
-        //after telling them where to go, consider spawning
-        comms.setNewSpawnSquad(currentSquadNum);
-        tryToSpawn(directionToEnemyHQ);
+
         
 
         

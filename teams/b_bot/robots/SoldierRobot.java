@@ -85,6 +85,8 @@ public class SoldierRobot extends BaseRobot {
         case BUILD_PASTR:
             switch (this.cstate) {
             case INIT: 
+                comms.setPastrLoc(new MapLocation(-1, -1));
+
                 nav.setDestination(destination);
                 this.cstate = ConstructionState.MOVE_TO_COARSE_LOC;
                 break;
@@ -105,15 +107,23 @@ public class SoldierRobot extends BaseRobot {
                 if (rc.isActive()) {
                     rc.construct(RobotType.PASTR);
                     break;
-                }  
-
+                }
             }
             break;
         case BUILD_NOISE_TOWER:
+            MapLocation possiblePastrLoc = comms.getPastrLoc();
+            boolean knowsPastrLoc = possiblePastrLoc.x > -1;
+
             switch (this.cstate) {
             case INIT:
-                nav.setDestination(destination); 
-                this.cstate = ConstructionState.MOVE_TO_COARSE_LOC;
+                if (knowsPastrLoc) {
+                    destination = possiblePastrLoc;
+                    nav.setDestination(possiblePastrLoc);
+                    this.cstate = ConstructionState.MOVE_TO_COARSE_LOC;
+                } else {
+                    nav.setDestination(destination);
+                    this.cstate = ConstructionState.MOVE_TO_COARSE_LOC;
+                }
                 break;  
             case MOVE_TO_COARSE_LOC:
                 if (this.curLoc.distanceSquaredTo(destination) > FUZZY_BUILDING_PLACEMENT) {
@@ -121,9 +131,8 @@ public class SoldierRobot extends BaseRobot {
                     if (toMove1 != null) {
                         simpleMove(toMove1);
                     }
-                } else {
-                    adjacent = comms.getPastrLoc();
-                    adjacent = findAdjacentSquare(adjacent);
+                } else if (knowsPastrLoc) {
+                    adjacent = findAdjacentSquare(possiblePastrLoc);
                     nav.setDestination(adjacent);
                     this.cstate = ConstructionState.MOVE_TO_EXACT_LOC;
                 }

@@ -57,6 +57,7 @@ public class InfoArrayManager {
      * New Soldiers read this first command to get their squad assignment
      */
     public void setNewSpawnSquad(int squadNum) throws GameActionException {
+        System.out.println("Sending new squad number: " + squadNum);
         rc.broadcast(NEW_SPAWN_SQUAD_SLOT, squadNum);
     }
     

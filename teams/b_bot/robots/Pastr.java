@@ -12,5 +12,4 @@ public class Pastr extends BaseRobot {
     public void run() throws GameActionException {
         
     }
-
 }
