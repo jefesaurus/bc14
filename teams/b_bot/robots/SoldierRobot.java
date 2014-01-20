@@ -3,6 +3,7 @@ package b_bot.robots;
 import b_bot.Constants;
 import b_bot.managers.InfoArray.Command;
 import b_bot.navigation.NavigationMode;
+import b_bot.util.CowGrowth;
 import b_bot.util.Util;
 import battlecode.common.Direction;
 import battlecode.common.GameActionException;
@@ -85,14 +86,30 @@ public class SoldierRobot extends BaseRobot {
         case BUILD_PASTR:
             switch (this.cstate) {
             case INIT: 
-                comms.setPastrLoc(new MapLocation(-1, -1));
-
-                nav.setDestination(destination);
+                System.out.println("entering INIT");
+                while (comms.getSearchCoordinates()[3] == 0) {
+                  rc.yield();
+                }
+                int[] sc = comms.getSearchCoordinates();
+                System.out.println("SC: " + sc[0] + " " + sc[1] + " " + sc[2] + " " + sc[3]);
+                int[] bestLoc = new CowGrowth(this.rc, this).getBestLocation(sc[0], sc[1], sc[2], sc[3]);
+                System.out.println("PASTR BUILDER: " + bestLoc[0] + " " + bestLoc[1] + " " + bestLoc[2]);
+                int[] HQBestLoc = comms.wait_P_PASTR_LOC_1();
+                System.out.println("Recieved msg from HQ");
+                if (HQBestLoc[2] > bestLoc[2]) {
+                    nav.setDestination(new MapLocation(HQBestLoc[0], HQBestLoc[1]));
+                    comms.setP_PASTR_LOC2(HQBestLoc);
+                } else {
+                    nav.setDestination(new MapLocation(bestLoc[0], bestLoc[1]));
+                    comms.setP_PASTR_LOC2(bestLoc);
+                }
+                rc.setIndicatorString(2, nav.getDestination().toString());
                 this.cstate = ConstructionState.MOVE_TO_COARSE_LOC;
                 break;
 
             case MOVE_TO_COARSE_LOC:
-                if (this.curLoc.distanceSquaredTo(destination) > FUZZY_BUILDING_PLACEMENT) {
+                System.out.println("movoing to coarse loc PASTR_BOT");
+                if (this.curLoc.distanceSquaredTo(nav.getDestination()) > FUZZY_BUILDING_PLACEMENT) {
                     Direction toMove = nav.navigateToDestination();
                     if (toMove != null) {
                         simpleMove(toMove);
@@ -104,40 +121,42 @@ public class SoldierRobot extends BaseRobot {
                 break;
 
             case MOVE_TO_EXACT_LOC: 
+                System.out.println("movoing to exact loc PASTR_BOT");
                 if (rc.isActive()) {
+                    System.out.println("constructing pastr now!");
                     rc.construct(RobotType.PASTR);
+                    
                     break;
                 }
             }
             break;
         case BUILD_NOISE_TOWER:
-            MapLocation possiblePastrLoc = comms.getPastrLoc();
-            boolean knowsPastrLoc = possiblePastrLoc.x > -1;
+            int[] msg = comms.wait_P_PASTR_LOC_2();
+            MapLocation possiblePastrLoc = new MapLocation(msg[1], msg[0]);
+            
 
             switch (this.cstate) {
             case INIT:
-                if (knowsPastrLoc) {
-                    destination = possiblePastrLoc;
-                    nav.setDestination(possiblePastrLoc);
-                    this.cstate = ConstructionState.MOVE_TO_COARSE_LOC;
-                } else {
-                    nav.setDestination(destination);
-                    this.cstate = ConstructionState.MOVE_TO_COARSE_LOC;
-                }
+                destination = possiblePastrLoc;
+                nav.setDestination(possiblePastrLoc);
+                this.cstate = ConstructionState.MOVE_TO_COARSE_LOC;
                 break;  
             case MOVE_TO_COARSE_LOC:
-                if (this.curLoc.distanceSquaredTo(destination) > FUZZY_BUILDING_PLACEMENT) {
+                if (this.curLoc.distanceSquaredTo(nav.getDestination()) > FUZZY_BUILDING_PLACEMENT) {
                     Direction toMove1 = nav.navigateToDestination();
                     if (toMove1 != null) {
                         simpleMove(toMove1);
                     }
-                } else if (knowsPastrLoc) {
-                    adjacent = findAdjacentSquare(possiblePastrLoc);
-                    nav.setDestination(adjacent);
+                } else {
                     this.cstate = ConstructionState.MOVE_TO_EXACT_LOC;
                 }
                 break;
             case MOVE_TO_EXACT_LOC:
+                System.out.println("movoing to exact loc NOISE_TOWER_BOT");
+
+                MapLocation exactLoc = comms.wait_PASTR_LOC_FINAL();
+                adjacent = findAdjacentSquare(exactLoc);
+                nav.setDestination(adjacent);
                 if (!this.curLoc.equals(adjacent)) {
                     Direction toMove2 = nav.navigateToDestination();
                     if (toMove2 != null) {
@@ -145,6 +164,7 @@ public class SoldierRobot extends BaseRobot {
                     }
                 } else {
                     if (rc.isActive()) {
+                        System.out.println("Constructing noise tower");
                         rc.construct(RobotType.NOISETOWER);
                     }
                 }
@@ -184,7 +204,7 @@ public class SoldierRobot extends BaseRobot {
         }
         if(rc.isActive()){
             if(rc.canMove(chosenDirection)){
-                rc.move(chosenDirection);
+                rc.sneak(chosenDirection);
                 return;
             }
             int forwardInt;
@@ -193,7 +213,7 @@ public class SoldierRobot extends BaseRobot {
                 forwardInt = chosenDirection.ordinal();
                 trialDir = Constants.allDirections[(forwardInt+directionalOffset+8)%8];
                 if(rc.canMove(trialDir)){
-                    rc.move(trialDir);
+                    rc.sneak(trialDir);
                     break;
                 }
             }

@@ -8,7 +8,7 @@ public class CowGrowth {
     
     private RobotController rc;
     public double[][] cowGrowth;
-    public int bigBoxSize = 5;
+    public static int bigBoxSize = 5;
     public double[][] coarseCowGrowth;
     public double[][] finalLocations;
     public final BaseRobot myBot;
@@ -30,9 +30,9 @@ public class CowGrowth {
         }
     }
     
-    public void assessCowGrowth() {
-        int width = rc.getMapWidth()/bigBoxSize;
-        int height = rc.getMapHeight()/bigBoxSize;
+    public void assessCowGrowth(int sx, int sy, int fx, int fy) {
+        int width = (fx - sx + 1)/bigBoxSize;
+        int height = (fy - sy + 1)/bigBoxSize;
         coarseCowGrowth = new double[width][height];
 
         for(int x=width*bigBoxSize;--x>=0;){
@@ -40,7 +40,7 @@ public class CowGrowth {
             for(int y=height*bigBoxSize;--y>=0;){
                 //System.out.println("Beg: " + Clock.getBytecodeNum());
                 //test[x][y] = 1.0;
-                coarseCowGrowth[x_bigBox][y/bigBoxSize]+= (cowGrowth[x][y] / (500 + myBot.myHQ.distanceSquaredTo(new MapLocation(x,y)))) * (500 + myBot.enemyHQ.distanceSquaredTo(new MapLocation(x,y)));
+                coarseCowGrowth[x_bigBox][y/bigBoxSize]+= 10 * (cowGrowth[x][y] / (100 + 100*myBot.myHQ.distanceSquaredTo(new MapLocation(x,y)))) * (100 + myBot.enemyHQ.distanceSquaredTo(new MapLocation(x,y)));
                 //System.out.println("End: " + Clock.getBytecodeNum());
             }
         }
@@ -66,15 +66,15 @@ public class CowGrowth {
     }
     
     //returns the center of the square that has the best location
-    public MapLocation getBestLocation() {
+    public int[] getBestLocation(int sx, int sy, int fx, int fy) {
         
-        assessCowGrowth();
+        assessCowGrowth(sx, sy, fx, fy);
         
         int finalx =-1, finaly=-1;
         double maxGrowth = -1.0;
         
-        for (int x=rc.getMapWidth()/bigBoxSize; --x>=0;) {
-            for (int y=rc.getMapHeight()/bigBoxSize; --y>=0;) {
+        for (int x=(fx - sx + 1)/bigBoxSize; --x>=0;) {
+            for (int y=(fy - sy + 1)/bigBoxSize; --y>=0;) {
                 if (maxGrowth < finalLocations[x][y]) {
                     maxGrowth = finalLocations[x][y];
                     finalx = x;
@@ -82,7 +82,9 @@ public class CowGrowth {
                 }
             }
         }
-        return new MapLocation(finalx*bigBoxSize + bigBoxSize/2, finaly*bigBoxSize + bigBoxSize/2);
+        int[] best = { sx + finalx*bigBoxSize + bigBoxSize/2, sy + finaly*bigBoxSize + bigBoxSize/2, (int) maxGrowth };
+        System.out.println("best loc: " + "(" + best[0] + "," + best[1] + ")" + " score: " + best[2]);
+        return best;
     }
     
 }
