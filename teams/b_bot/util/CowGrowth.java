@@ -23,7 +23,7 @@ public class CowGrowth {
         System.out.println("Coarse map:");
         for(int x=0;x<coarseMap[0].length;x++){
             for(int y=0;y<coarseMap.length;y++){
-                double numberOfObstacles = coarseMap[x][y];
+                int numberOfObstacles = (int) coarseMap[x][y];
                 System.out.print(Math.min(numberOfObstacles, 999) + " ");
             }
             System.out.println();
@@ -40,7 +40,7 @@ public class CowGrowth {
             for(int y=height*bigBoxSize;--y>=0;){
                 //System.out.println("Beg: " + Clock.getBytecodeNum());
                 //test[x][y] = 1.0;
-                coarseCowGrowth[x_bigBox][y/bigBoxSize]+= 10 * (cowGrowth[x][y] / (100 + 100*myBot.myHQ.distanceSquaredTo(new MapLocation(x,y)))) * (100 + myBot.enemyHQ.distanceSquaredTo(new MapLocation(x,y)));
+                coarseCowGrowth[x_bigBox][y/bigBoxSize] += (cowGrowth[x][y] / (100 + myBot.myHQ.distanceSquaredTo(new MapLocation(x,y)))) * (100 + myBot.enemyHQ.distanceSquaredTo(new MapLocation(x,y)));
                 //System.out.println("End: " + Clock.getBytecodeNum());
             }
         }
@@ -58,6 +58,7 @@ public class CowGrowth {
                 }
             }
         }
+        //System.out.println("search coordinates: (" + sx + "," + sy + "), (" + fx + "," + fy + ")");
         //printCoarseMap(finalLocations);
     }
     
@@ -82,8 +83,8 @@ public class CowGrowth {
                 }
             }
         }
-        int[] best = { sx + finalx*bigBoxSize + bigBoxSize/2, sy + finaly*bigBoxSize + bigBoxSize/2, (int) maxGrowth };
-        System.out.println("best loc: " + "(" + best[0] + "," + best[1] + ")" + " score: " + best[2]);
+        int[] best = { fx - finalx*bigBoxSize + bigBoxSize/2, sy + finaly*bigBoxSize + bigBoxSize/2, (int) maxGrowth };
+        //System.out.println("best loc: " + "(" + best[0] + "," + best[1] + ")" + " score: " + best[2]);
         return best;
     }
     

@@ -95,48 +95,60 @@ public class HQRobot extends BaseRobot {
     public void run() throws GameActionException {   
         
         if (bestPastrLoc == null) {
-            System.out.println("this hq's loc " + this.HQ_LOCATION);
             int MIDX =  (rc.getMapWidth() / 2);
             int MIDY = (rc.getMapHeight() / 2);
+            int[] info;
             switch (this.HQ_LOCATION) {
-
             case TOP:
                 comms.sendSearchCoordinates(MIDX - CowGrowth.bigBoxSize, 0, rc.getMapWidth(), MIDY + CowGrowth.bigBoxSize);
-                comms.setP_PASTR_LOC1(new CowGrowth(this.rc, this).getBestLocation(0, 0, MIDX  + CowGrowth.bigBoxSize, MIDY  + CowGrowth.bigBoxSize));
+                info = (new CowGrowth(this.rc, this).getBestLocation(0, 0, MIDX  + CowGrowth.bigBoxSize, MIDY  + CowGrowth.bigBoxSize));
+                comms.setP_PASTR_SCORE1(info[2]);
+                comms.setP_PASTR_LOC1(info);
                 break;
             case BOTTOM:
                 comms.sendSearchCoordinates(MIDX - CowGrowth.bigBoxSize, MIDY - CowGrowth.bigBoxSize, rc.getMapWidth(), rc.getMapHeight());
-                comms.setP_PASTR_LOC1(new CowGrowth(this.rc, this).getBestLocation(0, MIDY - CowGrowth.bigBoxSize, MIDX + CowGrowth.bigBoxSize,  rc.getMapHeight()));
+                info = (new CowGrowth(this.rc, this).getBestLocation(0, MIDY - CowGrowth.bigBoxSize, MIDX + CowGrowth.bigBoxSize,  rc.getMapHeight()));
+                comms.setP_PASTR_SCORE1(info[2]);
+                comms.setP_PASTR_LOC1(info);
                 break;
             case RIGHT:
                 comms.sendSearchCoordinates(MIDX - CowGrowth.bigBoxSize, 0, rc.getMapWidth(), MIDY + CowGrowth.bigBoxSize);
-                comms.setP_PASTR_LOC1(new CowGrowth(this.rc, this).getBestLocation(MIDX - CowGrowth.bigBoxSize, MIDY - CowGrowth.bigBoxSize, rc.getMapWidth(),  rc.getMapHeight()));
+                info = (new CowGrowth(this.rc, this).getBestLocation(MIDX - CowGrowth.bigBoxSize, MIDY - CowGrowth.bigBoxSize, rc.getMapWidth(),  rc.getMapHeight()));
+                comms.setP_PASTR_SCORE1(info[2]);
+                comms.setP_PASTR_LOC1(info);
                 break;
             case LEFT:
                 comms.sendSearchCoordinates(0, 0, MIDX + CowGrowth.bigBoxSize, MIDY + CowGrowth.bigBoxSize);
-                comms.setP_PASTR_LOC1(new CowGrowth(this.rc, this).getBestLocation(0, MIDY - CowGrowth.bigBoxSize, MIDX + CowGrowth.bigBoxSize, rc.getMapHeight()));
+                info = (new CowGrowth(this.rc, this).getBestLocation(0, MIDY - CowGrowth.bigBoxSize, MIDX + CowGrowth.bigBoxSize, rc.getMapHeight()));
+                comms.setP_PASTR_SCORE1(info[2]);
+                comms.setP_PASTR_LOC1(info);
                 break;
             case TOP_RIGHT:
                 comms.sendSearchCoordinates(0, 0, rc.getMapWidth(), MIDY + CowGrowth.bigBoxSize);
-                comms.setP_PASTR_LOC1(new CowGrowth(this.rc, this).getBestLocation(MIDX - CowGrowth.bigBoxSize, MIDY - CowGrowth.bigBoxSize, rc.getMapWidth(), rc.getMapHeight()));
+                info = (new CowGrowth(this.rc, this).getBestLocation(MIDX - CowGrowth.bigBoxSize, MIDY - CowGrowth.bigBoxSize, rc.getMapWidth(), rc.getMapHeight()));
+                comms.setP_PASTR_SCORE1(info[2]);
+                comms.setP_PASTR_LOC1(info);
                 break;
             case TOP_LEFT:
                 comms.sendSearchCoordinates(0, 0, rc.getMapWidth(), MIDY + CowGrowth.bigBoxSize);
-                comms.setP_PASTR_LOC1(new CowGrowth(this.rc, this).getBestLocation(0, MIDY - CowGrowth.bigBoxSize, MIDX - CowGrowth.bigBoxSize, rc.getMapHeight()));
+                info = (new CowGrowth(this.rc, this).getBestLocation(0, MIDY - CowGrowth.bigBoxSize, MIDX - CowGrowth.bigBoxSize, rc.getMapHeight()));
+                comms.setP_PASTR_SCORE1(info[2]);
+                comms.setP_PASTR_LOC1(info);
                 break;
             case BOTTOM_RIGHT:
                 comms.sendSearchCoordinates(0, MIDY - CowGrowth.bigBoxSize, rc.getMapWidth(), rc.getMapHeight());
-                comms.setP_PASTR_LOC1(new CowGrowth(this.rc, this).getBestLocation(MIDX - CowGrowth.bigBoxSize, 0, rc.getMapWidth(), MIDY + CowGrowth.bigBoxSize));
+                info = (new CowGrowth(this.rc, this).getBestLocation(MIDX - CowGrowth.bigBoxSize, 0, rc.getMapWidth(), MIDY + CowGrowth.bigBoxSize));
+                comms.setP_PASTR_SCORE1(info[2]);
+                comms.setP_PASTR_LOC1(info);
                 break;
             case BOTTOM_LEFT:
                 comms.sendSearchCoordinates(0, 0, MIDX + CowGrowth.bigBoxSize, rc.getMapHeight());
-                comms.setP_PASTR_LOC1(new CowGrowth(this.rc, this).getBestLocation(MIDX - CowGrowth.bigBoxSize, MIDY - CowGrowth.bigBoxSize, rc.getMapWidth(), rc.getMapHeight()));
+                info = (new CowGrowth(this.rc, this).getBestLocation(MIDX - CowGrowth.bigBoxSize, MIDY - CowGrowth.bigBoxSize, rc.getMapWidth(), rc.getMapHeight()));
+                comms.setP_PASTR_SCORE1(info[2]);
+                comms.setP_PASTR_LOC1(info);
                 break;
             }
-            System.out.println("Done with HQ cowgrowth");
-            //TODO INVESTIGATE POSSIBLE BUGS DUE TO WAITING ON THIS MESSAGE
             int[] bestLoc = comms.wait_P_PASTR_LOC_2();
-            System.out.println("received msg from bot"); 
             bestPastrLoc = new MapLocation(bestLoc[0], bestLoc[1]);
             comms.sendSquadCommand(0, new Command(CommandType.BUILD_PASTR, bestPastrLoc));
             
