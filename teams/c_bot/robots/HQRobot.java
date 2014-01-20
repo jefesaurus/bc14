@@ -7,6 +7,7 @@ import c_bot.managers.InfoArray.CommandType;
 import c_bot.util.CowGrowth;
 import c_bot.util.FastSet;
 import c_bot.util.VectorFunctions;
+import b_bot.robots.HQRobot.HQLocation;
 import battlecode.common.Direction;
 import battlecode.common.GameActionException;
 import battlecode.common.GameConstants;
@@ -17,6 +18,19 @@ import battlecode.common.RobotController;
 import battlecode.common.RobotType;
 
 public class HQRobot extends BaseRobot {
+    
+    public enum HQLocation {
+        TOP_LEFT,
+        TOP_RIGHT,
+        BOTTOM_LEFT,
+        BOTTOM_RIGHT,
+        BOTTOM,
+        TOP,
+        LEFT,
+        RIGHT
+    };
+    
+    public HQLocation HQ_LOCATION;
     static MapLocation rallyPoint;    
     static MapLocation defenseRallyPoint = null;    
 
@@ -43,7 +57,36 @@ public class HQRobot extends BaseRobot {
         // Tell this squad to rally at rallyPoint
         if (tryToSpawn(directionToEnemyHQ)) {
             comms.setNewSpawnSquad(currentSquadNum);        
-            comms.sendSquadCommand(currentSquadNum++, new Command(CommandType.RALLY_POINT, myHQ));
+            comms.sendSquadCommand(currentSquadNum++, new Command(CommandType.BUILD_PASTR, myHQ));
+        }
+        
+        int width = rc.getMapWidth();
+        int height = rc.getMapHeight();
+        
+        if (Math.abs(this.curLoc.x - (width / 2)) < 5) {
+            if (this.curLoc.y < (height / 2)) {
+                this.HQ_LOCATION = HQLocation.TOP;
+            } else {
+                this.HQ_LOCATION = HQLocation.BOTTOM;
+            }
+        } else if (Math.abs(this.curLoc.y - (width / 2)) < 5) {
+            if (this.curLoc.x > (width / 2)) {
+                this.HQ_LOCATION = HQLocation.RIGHT;
+            } else {
+                this.HQ_LOCATION = HQLocation.LEFT;
+            }
+        } else if (this.curLoc.x < width / 2) {
+            if (this.curLoc.y < (height / 2)) {
+                this.HQ_LOCATION = HQLocation.TOP_LEFT;
+            } else {
+                this.HQ_LOCATION = HQLocation.BOTTOM_LEFT;
+            }
+        } else {
+            if (this.curLoc.y < (height / 2)) {
+                this.HQ_LOCATION = HQLocation.TOP_RIGHT;
+            } else {
+                this.HQ_LOCATION = HQLocation.BOTTOM_RIGHT;
+            }
         }
     }
     
@@ -53,8 +96,61 @@ public class HQRobot extends BaseRobot {
     public void run() throws GameActionException {   
         
         if (bestPastrLoc == null) {
-            bestPastrLoc = new CowGrowth(rc, this).getBestLocation();
-
+            int MIDX =  (rc.getMapWidth() / 2);
+            int MIDY = (rc.getMapHeight() / 2);
+            int[] info;
+            switch (this.HQ_LOCATION) {
+            case TOP:
+                comms.sendSearchCoordinates(MIDX - CowGrowth.bigBoxSize, 0, rc.getMapWidth(), MIDY + CowGrowth.bigBoxSize);
+                info = (new CowGrowth(this.rc, this).getBestLocation(0, 0, MIDX  + CowGrowth.bigBoxSize, MIDY  + CowGrowth.bigBoxSize));
+                comms.setP_PASTR_SCORE1(info[2]);
+                comms.setP_PASTR_LOC1(info);
+                break;
+            case BOTTOM:
+                comms.sendSearchCoordinates(MIDX - CowGrowth.bigBoxSize, MIDY - CowGrowth.bigBoxSize, rc.getMapWidth(), rc.getMapHeight());
+                info = (new CowGrowth(this.rc, this).getBestLocation(0, MIDY - CowGrowth.bigBoxSize, MIDX + CowGrowth.bigBoxSize,  rc.getMapHeight()));
+                comms.setP_PASTR_SCORE1(info[2]);
+                comms.setP_PASTR_LOC1(info);
+                break;
+            case RIGHT:
+                comms.sendSearchCoordinates(MIDX - CowGrowth.bigBoxSize, 0, rc.getMapWidth(), MIDY + CowGrowth.bigBoxSize);
+                info = (new CowGrowth(this.rc, this).getBestLocation(MIDX - CowGrowth.bigBoxSize, MIDY - CowGrowth.bigBoxSize, rc.getMapWidth(),  rc.getMapHeight()));
+                comms.setP_PASTR_SCORE1(info[2]);
+                comms.setP_PASTR_LOC1(info);
+                break;
+            case LEFT:
+                comms.sendSearchCoordinates(0, 0, MIDX + CowGrowth.bigBoxSize, MIDY + CowGrowth.bigBoxSize);
+                info = (new CowGrowth(this.rc, this).getBestLocation(0, MIDY - CowGrowth.bigBoxSize, MIDX + CowGrowth.bigBoxSize, rc.getMapHeight()));
+                comms.setP_PASTR_SCORE1(info[2]);
+                comms.setP_PASTR_LOC1(info);
+                break;
+            case TOP_RIGHT:
+                comms.sendSearchCoordinates(0, 0, rc.getMapWidth(), MIDY + CowGrowth.bigBoxSize);
+                info = (new CowGrowth(this.rc, this).getBestLocation(MIDX - CowGrowth.bigBoxSize, MIDY - CowGrowth.bigBoxSize, rc.getMapWidth(), rc.getMapHeight()));
+                comms.setP_PASTR_SCORE1(info[2]);
+                comms.setP_PASTR_LOC1(info);
+                break;
+            case TOP_LEFT:
+                comms.sendSearchCoordinates(0, 0, rc.getMapWidth(), MIDY + CowGrowth.bigBoxSize);
+                info = (new CowGrowth(this.rc, this).getBestLocation(0, MIDY - CowGrowth.bigBoxSize, MIDX - CowGrowth.bigBoxSize, rc.getMapHeight()));
+                comms.setP_PASTR_SCORE1(info[2]);
+                comms.setP_PASTR_LOC1(info);
+                break;
+            case BOTTOM_RIGHT:
+                comms.sendSearchCoordinates(0, MIDY - CowGrowth.bigBoxSize, rc.getMapWidth(), rc.getMapHeight());
+                info = (new CowGrowth(this.rc, this).getBestLocation(MIDX - CowGrowth.bigBoxSize, 0, rc.getMapWidth(), MIDY + CowGrowth.bigBoxSize));
+                comms.setP_PASTR_SCORE1(info[2]);
+                comms.setP_PASTR_LOC1(info);
+                break;
+            case BOTTOM_LEFT:
+                comms.sendSearchCoordinates(0, 0, MIDX + CowGrowth.bigBoxSize, rc.getMapHeight());
+                info = (new CowGrowth(this.rc, this).getBestLocation(MIDX - CowGrowth.bigBoxSize, MIDY - CowGrowth.bigBoxSize, rc.getMapWidth(), rc.getMapHeight()));
+                comms.setP_PASTR_SCORE1(info[2]);
+                comms.setP_PASTR_LOC1(info);
+                break;
+            }
+            int[] bestLoc = comms.wait_P_PASTR_LOC_2();
+            bestPastrLoc = new MapLocation(bestLoc[0], bestLoc[1]);
             comms.sendSquadCommand(0, new Command(CommandType.BUILD_PASTR, bestPastrLoc));
         } else if (currentSquadNum == 1) {
             if (tryToSpawn(myHQ.directionTo(bestPastrLoc))) {
