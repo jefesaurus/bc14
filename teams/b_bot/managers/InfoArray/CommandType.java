@@ -6,5 +6,5 @@ public enum CommandType {
     ATTACK_PASTR, // Approach point with primary objective of destroying pastr
     DEFEND_PASTR, // Approach point with primary objective of defending pastr
     BUILD_PASTR,  // Build a pastr at the supplied location
-    BUILD_NOISE_TOWER // Build a noise tower at this location
+    BUILD_NOISE_TOWER, // Build a noise tower at this location  
 }

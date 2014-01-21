@@ -4,6 +4,7 @@ import b_bot.Constants;
 import b_bot.managers.InfoCache;
 import b_bot.managers.InfoArray.Command;
 import b_bot.managers.InfoArray.CommandType;
+import b_bot.managers.InfoArray.InfoArrayManager;
 import b_bot.util.CowGrowth;
 import b_bot.util.FastSet;
 import b_bot.util.VectorFunctions;
@@ -17,10 +18,22 @@ import battlecode.common.RobotController;
 import battlecode.common.RobotType;
 
 public class HQRobot extends BaseRobot {
+    
+    public enum HQLocation {
+        TOP_LEFT,
+        TOP_RIGHT,
+        BOTTOM_LEFT,
+        BOTTOM_RIGHT,
+        BOTTOM,
+        TOP,
+        LEFT,
+        RIGHT
+    };
+    
     static MapLocation rallyPoint;    
     static Command[] squadCommands = new Command[999];
     Direction directionToEnemyHQ;
-    
+    public HQLocation HQ_LOCATION;
     // Our favored pastr location
     MapLocation bestPastrLoc = null;
  
@@ -38,23 +51,107 @@ public class HQRobot extends BaseRobot {
         // Set the new spawn squad
         comms.setNewSpawnSquad(currentSquadNum);        
         // Tell this squad to rally at rallyPoint
-        comms.sendSquadCommand(currentSquadNum, new Command(CommandType.RALLY_POINT, myHQ));
+        comms.sendSquadCommand(currentSquadNum, new Command(CommandType.BUILD_PASTR, myHQ));
         if (tryToSpawn(directionToEnemyHQ)) {
             System.out.println("Did spawnwith squad num: " + currentSquadNum);
             currentSquadNum ++;            
         }
-        rc.yield();
+        
+        int width = rc.getMapWidth();
+        int height = rc.getMapHeight();
+        
+        if (Math.abs(this.curLoc.x - (width / 2)) < 5) {
+            if (this.curLoc.y < (height / 2)) {
+                this.HQ_LOCATION = HQLocation.TOP;
+            } else {
+                this.HQ_LOCATION = HQLocation.BOTTOM;
+            }
+        } else if (Math.abs(this.curLoc.y - (width / 2)) < 5) {
+            if (this.curLoc.x > (width / 2)) {
+                this.HQ_LOCATION = HQLocation.RIGHT;
+            } else {
+                this.HQ_LOCATION = HQLocation.LEFT;
+            }
+        } else if (this.curLoc.x < width / 2) {
+            if (this.curLoc.y < (height / 2)) {
+                this.HQ_LOCATION = HQLocation.TOP_LEFT;
+            } else {
+                this.HQ_LOCATION = HQLocation.BOTTOM_LEFT;
+            }
+        } else {
+            if (this.curLoc.y < (height / 2)) {
+                this.HQ_LOCATION = HQLocation.TOP_RIGHT;
+            } else {
+                this.HQ_LOCATION = HQLocation.BOTTOM_RIGHT;
+            }
+        }
+        
     }
     
     
-    MapLocation pastrLoc = new MapLocation(40, 32);
+    //MapLocation pastrLoc = new MapLocation(40, 32);
 
     @Override
     public void run() throws GameActionException {   
         
         if (bestPastrLoc == null) {
-            bestPastrLoc = new CowGrowth(rc, this).getBestLocation();
+            int MIDX =  (rc.getMapWidth() / 2);
+            int MIDY = (rc.getMapHeight() / 2);
+            int[] info;
+            switch (this.HQ_LOCATION) {
+            case TOP:
+                comms.sendSearchCoordinates(MIDX - CowGrowth.bigBoxSize, 0, rc.getMapWidth(), MIDY + CowGrowth.bigBoxSize);
+                info = (new CowGrowth(this.rc, this).getBestLocation(0, 0, MIDX  + CowGrowth.bigBoxSize, MIDY  + CowGrowth.bigBoxSize));
+                comms.setP_PASTR_SCORE1(info[2]);
+                comms.setP_PASTR_LOC1(info);
+                break;
+            case BOTTOM:
+                comms.sendSearchCoordinates(MIDX - CowGrowth.bigBoxSize, MIDY - CowGrowth.bigBoxSize, rc.getMapWidth(), rc.getMapHeight());
+                info = (new CowGrowth(this.rc, this).getBestLocation(0, MIDY - CowGrowth.bigBoxSize, MIDX + CowGrowth.bigBoxSize,  rc.getMapHeight()));
+                comms.setP_PASTR_SCORE1(info[2]);
+                comms.setP_PASTR_LOC1(info);
+                break;
+            case RIGHT:
+                comms.sendSearchCoordinates(MIDX - CowGrowth.bigBoxSize, 0, rc.getMapWidth(), MIDY + CowGrowth.bigBoxSize);
+                info = (new CowGrowth(this.rc, this).getBestLocation(MIDX - CowGrowth.bigBoxSize, MIDY - CowGrowth.bigBoxSize, rc.getMapWidth(),  rc.getMapHeight()));
+                comms.setP_PASTR_SCORE1(info[2]);
+                comms.setP_PASTR_LOC1(info);
+                break;
+            case LEFT:
+                comms.sendSearchCoordinates(0, 0, MIDX + CowGrowth.bigBoxSize, MIDY + CowGrowth.bigBoxSize);
+                info = (new CowGrowth(this.rc, this).getBestLocation(0, MIDY - CowGrowth.bigBoxSize, MIDX + CowGrowth.bigBoxSize, rc.getMapHeight()));
+                comms.setP_PASTR_SCORE1(info[2]);
+                comms.setP_PASTR_LOC1(info);
+                break;
+            case TOP_RIGHT:
+                comms.sendSearchCoordinates(0, 0, rc.getMapWidth(), MIDY + CowGrowth.bigBoxSize);
+                info = (new CowGrowth(this.rc, this).getBestLocation(MIDX - CowGrowth.bigBoxSize, MIDY - CowGrowth.bigBoxSize, rc.getMapWidth(), rc.getMapHeight()));
+                comms.setP_PASTR_SCORE1(info[2]);
+                comms.setP_PASTR_LOC1(info);
+                break;
+            case TOP_LEFT:
+                comms.sendSearchCoordinates(0, 0, rc.getMapWidth(), MIDY + CowGrowth.bigBoxSize);
+                info = (new CowGrowth(this.rc, this).getBestLocation(0, MIDY - CowGrowth.bigBoxSize, MIDX - CowGrowth.bigBoxSize, rc.getMapHeight()));
+                comms.setP_PASTR_SCORE1(info[2]);
+                comms.setP_PASTR_LOC1(info);
+                break;
+            case BOTTOM_RIGHT:
+                comms.sendSearchCoordinates(0, MIDY - CowGrowth.bigBoxSize, rc.getMapWidth(), rc.getMapHeight());
+                info = (new CowGrowth(this.rc, this).getBestLocation(MIDX - CowGrowth.bigBoxSize, 0, rc.getMapWidth(), MIDY + CowGrowth.bigBoxSize));
+                comms.setP_PASTR_SCORE1(info[2]);
+                comms.setP_PASTR_LOC1(info);
+                break;
+            case BOTTOM_LEFT:
+                comms.sendSearchCoordinates(0, 0, MIDX + CowGrowth.bigBoxSize, rc.getMapHeight());
+                info = (new CowGrowth(this.rc, this).getBestLocation(MIDX - CowGrowth.bigBoxSize, MIDY - CowGrowth.bigBoxSize, rc.getMapWidth(), rc.getMapHeight()));
+                comms.setP_PASTR_SCORE1(info[2]);
+                comms.setP_PASTR_LOC1(info);
+                break;
+            }
+            int[] bestLoc = comms.wait_P_PASTR_LOC_2();
+            bestPastrLoc = new MapLocation(bestLoc[0], bestLoc[1]);
             comms.sendSquadCommand(0, new Command(CommandType.BUILD_PASTR, bestPastrLoc));
+            
         } else if (currentSquadNum == 1) {
             if (tryToSpawn(myHQ.directionTo(bestPastrLoc))) {
                 System.out.println("Did spawnwith squad num: " + currentSquadNum);
@@ -71,7 +168,7 @@ public class HQRobot extends BaseRobot {
         } else {
             //after telling them where to go, consider spawning
             if (tryToSpawn(directionToEnemyHQ)) {
-                System.out.println("Did spawnwith squad num: " + currentSquadNum);
+                //System.out.println("Did spawnwith squad num: " + currentSquadNum);
                 rc.yield();
             }
         }
