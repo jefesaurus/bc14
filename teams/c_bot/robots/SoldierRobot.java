@@ -1,7 +1,10 @@
 package c_bot.robots;
 
 import c_bot.Constants;
+import c_bot.managers.InfoArray.BuildingType;
 import c_bot.managers.InfoArray.Command;
+import c_bot.managers.InfoArray.BuildingInfo;
+import c_bot.managers.InfoArray.BuildingStatus;
 import c_bot.navigation.NavigationMode;
 import c_bot.util.Util;
 import c_bot.util.VectorFunctions;
@@ -33,13 +36,12 @@ public class SoldierRobot extends BaseRobot {
         MOVE_TO_EXACT_LOC
     }
 
-
     static int pathCreatedRound = -1;
     int squadNum = 0;
     Command currentCommand;
 
     //PASTR and NOISETOWER vars
-    public final int FUZZY_BUILDING_PLACEMENT = 5;
+    public final int FUZZY_BUILDING_PLACEMENT = 9;
     public ConstructionState cstate;
     public MapLocation adjacent;
     public MapLocation tower_loc;
@@ -47,7 +49,7 @@ public class SoldierRobot extends BaseRobot {
     
     public MapLocation pastrToDefend = null;
     public MapLocation pointInFrontOfPastrToDefend = null;
-
+   
 
     public SoldierRobot(RobotController rc) throws GameActionException {
         super(rc);          
@@ -95,7 +97,7 @@ public class SoldierRobot extends BaseRobot {
                 if(possiblePastrLoc.x > -1) {
                     pastrToDefend = possiblePastrLoc;
                     // Calculate the true defensive waypoint with the new info
-                    pointInFrontOfPastrToDefend = VectorFunctions.compoundMapAdd(pastrToDefend, enemyHQ, 4);
+                    pointInFrontOfPastrToDefend = possiblePastrLoc;//VectorFunctions.compoundMapAdd(pastrToDefend, enemyHQ, 4);
                 }
             }
             if(nearbyEnemies.length > 0) {
@@ -109,7 +111,7 @@ public class SoldierRobot extends BaseRobot {
             } else {
                 // Initially populate the defense waypoint to the approximation:
                 if (pointInFrontOfPastrToDefend == null) {
-                    pointInFrontOfPastrToDefend = VectorFunctions.compoundMapAdd(destination, enemyHQ, 4);
+                    pointInFrontOfPastrToDefend = destination;
                 }
                 simpleBug(pointInFrontOfPastrToDefend, false);
             } 
@@ -119,28 +121,30 @@ public class SoldierRobot extends BaseRobot {
         case BUILD_PASTR:
             switch (this.cstate) {
             case INIT: 
-                while (comms.getSearchCoordinates()[3] == 0) {
-                  rc.yield();
+                MapLocation pastrLoc = comms.getPastrLoc();
+                if (pastrLoc.equals(new MapLocation(0,0))) {
+                    comms.setBuildingStatus(BuildingType.PASTR, new BuildingInfo(curRound, BuildingStatus.IS_COMPUTING, curLoc));
+                    while (comms.getSearchCoordinates()[3] == 0) {
+                        return; // effectively yield
+                    }
+                    int[] sc = comms.getSearchCoordinates();
+                    int[] bestLoc = new CowGrowth(this.rc, this).getBestLocation(sc[0], sc[1], sc[2], sc[3]);
+                    int HQBestScore = comms.wait_P_PASTR_SCORE_1();
+                    if (HQBestScore > bestLoc[2]) {
+                        pastrLoc = comms.wait_P_PASTR_LOC_1();
+                    } else {
+                        pastrLoc = new MapLocation(bestLoc[0], bestLoc[1]);
+                    }
+                    comms.setP_PASTR_LOC2(pastrLoc);
+
                 }
-                int[] sc = comms.getSearchCoordinates();
-                int[] bestLoc = new CowGrowth(this.rc, this).getBestLocation(sc[0], sc[1], sc[2], sc[3]);
-                int HQBestScore = comms.wait_P_PASTR_SCORE_1();
-                if (HQBestScore > bestLoc[2]) {
-                 //   System.out.println("HQ BETTER");
-                    int[] HQBestLoc = comms.wait_P_PASTR_LOC_1();
-                    nav.setDestination(new MapLocation(HQBestLoc[0], HQBestLoc[1]));
-                    comms.setP_PASTR_LOC2(HQBestLoc);
-                } else {
-                //    System.out.println("HQ NOT BETTER");
-                    nav.setDestination(new MapLocation(bestLoc[0], bestLoc[1]));
-                    comms.setP_PASTR_LOC2(bestLoc);
-                }
-                //System.out.println("done with msgs");
+                nav.setDestination(pastrLoc);
                 rc.setIndicatorString(2, nav.getDestination().toString());
                 this.cstate = ConstructionState.MOVE_TO_COARSE_LOC;
-                break;
 
             case MOVE_TO_COARSE_LOC:
+                comms.setBuildingStatus(BuildingType.PASTR, new BuildingInfo(curRound, BuildingStatus.IN_CONSTRUCTION, curLoc));
+
                 //System.out.println("coarse loc");
                 if (this.curLoc.distanceSquaredTo(nav.getDestination()) > FUZZY_BUILDING_PLACEMENT) {
                     Direction toMove = nav.navigateToDestination();
@@ -154,6 +158,8 @@ public class SoldierRobot extends BaseRobot {
                 break;
 
             case MOVE_TO_EXACT_LOC: 
+                comms.setBuildingStatus(BuildingType.PASTR, new BuildingInfo(curRound, BuildingStatus.IN_CONSTRUCTION, curLoc));
+
                 if (rc.isActive()) {
                     //System.out.println("constructing pastr now!");
                     rc.construct(RobotType.PASTR);
@@ -163,30 +169,31 @@ public class SoldierRobot extends BaseRobot {
             }
             break;
         case BUILD_NOISE_TOWER:
-            int[] msg = comms.wait_P_PASTR_LOC_2();
-            MapLocation possiblePastrLoc = new MapLocation(msg[0], msg[1]);
-            
+            comms.setBuildingStatus(BuildingType.TOWER, new BuildingInfo(curRound, BuildingStatus.IN_CONSTRUCTION, curLoc));
+            MapLocation possiblePastrLoc = comms.wait_P_PASTR_LOC_2();
 
             switch (this.cstate) {
             case INIT:
                 destination = possiblePastrLoc;
                 nav.setDestination(possiblePastrLoc);
                 this.cstate = ConstructionState.MOVE_TO_COARSE_LOC;
-                break;  
             case MOVE_TO_COARSE_LOC:
-                //System.out.println("coarse loc");
-                if (this.curLoc.distanceSquaredTo(nav.getDestination()) > FUZZY_BUILDING_PLACEMENT) {
+                rc.setIndicatorString(1, "Finding coarse location");
+                if (this.curLoc.distanceSquaredTo(possiblePastrLoc) > FUZZY_BUILDING_PLACEMENT) {
                     simpleBug(nav.getDestination(), false);
+                    break;
                 } else {
                     this.cstate = ConstructionState.MOVE_TO_EXACT_LOC;
                 }
-                break;
             case MOVE_TO_EXACT_LOC:
-                //System.out.println("exact loc");
+                rc.setIndicatorString(1, "Finding exact location");
+
                 MapLocation exactLoc = comms.wait_PASTR_LOC_FINAL();
                 adjacent = findAdjacentSquare(exactLoc);
                 nav.setDestination(adjacent);
                 if (!this.curLoc.equals(adjacent)) {
+                    rc.setIndicatorString(2, "Not adjacent");
+
                     simpleBug(adjacent, false);
                 } else {
                     if (rc.isActive()) {
@@ -198,7 +205,6 @@ public class SoldierRobot extends BaseRobot {
                 break;
             }
         }
-
     }
 
     private MapLocation findAdjacentSquare(MapLocation loc) {
@@ -489,7 +495,8 @@ public class SoldierRobot extends BaseRobot {
                 if (numEnemiesAlmostInRange > 0) {
                     return;
                 } else {
-                    if (curLoc.distanceSquaredTo(pointInFrontOfPastrToDefend) > 3) {
+                    if (curLoc.distanceSquaredTo(pointInFrontOfPastrToDefend) > 4) {
+                        rc.setIndicatorString(1, "Bugging: Because no one to attack and not in range of base.");
                         simpleBug(pointInFrontOfPastrToDefend, false);
                     } else {
                         return;
@@ -499,7 +506,6 @@ public class SoldierRobot extends BaseRobot {
         } else {
             rc.setIndicatorString(2, "lowest health attackable soldier: " + lowestHealthAttackableSoldier.location.toString());
             if (rc.isActive() && rc.canAttackSquare(lowestHealthAttackableSoldier.location)) {
-                
                 rc.attackSquare(lowestHealthAttackableSoldier.location);
             }
         }

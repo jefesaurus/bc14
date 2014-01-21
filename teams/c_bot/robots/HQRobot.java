@@ -2,8 +2,11 @@ package c_bot.robots;
 
 import c_bot.Constants;
 import c_bot.managers.InfoCache;
+import c_bot.managers.InfoArray.BuildingType;
 import c_bot.managers.InfoArray.Command;
 import c_bot.managers.InfoArray.CommandType;
+import c_bot.managers.InfoArray.BuildingInfo;
+import c_bot.managers.InfoArray.BuildingStatus;
 import c_bot.util.CowGrowth;
 import c_bot.util.FastSet;
 import c_bot.util.VectorFunctions;
@@ -43,22 +46,13 @@ public class HQRobot extends BaseRobot {
     // Our target in the enemies pastrs
     MapLocation currPastrTarget = null;
 
-    int currentSquadNum = 0;
-    int currentSquadSize = 0;
-    
-
     public HQRobot(RobotController rc) throws GameActionException {
         super(rc);
-        rallyPoint = VectorFunctions.mladd(VectorFunctions.mldivide(VectorFunctions.mlsubtract(myHQ,enemyHQ),3), myHQ);
+        rallyPoint = myHQ;
+
 
         directionToEnemyHQ = this.myHQ.directionTo(this.enemyHQ);
         
-        // Set the new spawn squad
-        // Tell this squad to rally at rallyPoint
-        if (tryToSpawn(directionToEnemyHQ)) {
-            comms.setNewSpawnSquad(currentSquadNum);        
-            comms.sendSquadCommand(currentSquadNum++, new Command(CommandType.BUILD_PASTR, myHQ));
-        }
         
         int width = rc.getMapWidth();
         int height = rc.getMapHeight();
@@ -88,13 +82,41 @@ public class HQRobot extends BaseRobot {
                 this.HQ_LOCATION = HQLocation.BOTTOM_RIGHT;
             }
         }
+        trySpawnPastr();
+        calcBestPastrLocation();
+        rc.yield();
     }
     
     
 
     @Override
     public void run() throws GameActionException {   
+        Robot[] enemyRobots = rc.senseNearbyGameObjects(Robot.class,10000,rc.getTeam().opponent());
+        tryToAttack(enemyRobots);
         
+        if (!isPastrAlive()) {
+            trySpawnPastr();
+        } else if (!isTowerAlive()) {
+            trySpawnTower();
+        } else {
+            trySpawnSquadMember(3, rallyPoint, new Command(CommandType.ATTACK_PASTR, getPastrTarget(currPastrTarget)));
+        }
+        
+        rc.yield();
+    }
+    
+    public void tryToAttack(Robot[] enemyRobots) throws GameActionException {
+        MapLocation[] robotLocations = VectorFunctions.robotsToLocations(enemyRobots, rc);
+        
+        if(robotLocations.length>0){
+            MapLocation closestEnemyLoc = VectorFunctions.findClosest(robotLocations, rc.getLocation());
+            if(rc.isActive() && rc.canAttackSquare(closestEnemyLoc)){
+                rc.attackSquare(closestEnemyLoc);
+            }
+        }
+    }
+    
+    public void calcBestPastrLocation() throws GameActionException {
         if (bestPastrLoc == null) {
             int MIDX =  (rc.getMapWidth() / 2);
             int MIDY = (rc.getMapHeight() / 2);
@@ -104,124 +126,167 @@ public class HQRobot extends BaseRobot {
                 comms.sendSearchCoordinates(MIDX - CowGrowth.bigBoxSize, 0, rc.getMapWidth(), MIDY + CowGrowth.bigBoxSize);
                 info = (new CowGrowth(this.rc, this).getBestLocation(0, 0, MIDX  + CowGrowth.bigBoxSize, MIDY  + CowGrowth.bigBoxSize));
                 comms.setP_PASTR_SCORE1(info[2]);
-                comms.setP_PASTR_LOC1(info);
+                comms.setP_PASTR_LOC1(new MapLocation(info[0], info[1]));
                 break;
             case BOTTOM:
                 comms.sendSearchCoordinates(MIDX - CowGrowth.bigBoxSize, MIDY - CowGrowth.bigBoxSize, rc.getMapWidth(), rc.getMapHeight());
                 info = (new CowGrowth(this.rc, this).getBestLocation(0, MIDY - CowGrowth.bigBoxSize, MIDX + CowGrowth.bigBoxSize,  rc.getMapHeight()));
                 comms.setP_PASTR_SCORE1(info[2]);
-                comms.setP_PASTR_LOC1(info);
+                comms.setP_PASTR_LOC1(new MapLocation(info[0], info[1]));
                 break;
             case RIGHT:
                 comms.sendSearchCoordinates(MIDX - CowGrowth.bigBoxSize, 0, rc.getMapWidth(), MIDY + CowGrowth.bigBoxSize);
                 info = (new CowGrowth(this.rc, this).getBestLocation(MIDX - CowGrowth.bigBoxSize, MIDY - CowGrowth.bigBoxSize, rc.getMapWidth(),  rc.getMapHeight()));
                 comms.setP_PASTR_SCORE1(info[2]);
-                comms.setP_PASTR_LOC1(info);
+                comms.setP_PASTR_LOC1(new MapLocation(info[0], info[1]));
                 break;
             case LEFT:
                 comms.sendSearchCoordinates(0, 0, MIDX + CowGrowth.bigBoxSize, MIDY + CowGrowth.bigBoxSize);
                 info = (new CowGrowth(this.rc, this).getBestLocation(0, MIDY - CowGrowth.bigBoxSize, MIDX + CowGrowth.bigBoxSize, rc.getMapHeight()));
                 comms.setP_PASTR_SCORE1(info[2]);
-                comms.setP_PASTR_LOC1(info);
+                comms.setP_PASTR_LOC1(new MapLocation(info[0], info[1]));
                 break;
             case TOP_RIGHT:
                 comms.sendSearchCoordinates(0, 0, rc.getMapWidth(), MIDY + CowGrowth.bigBoxSize);
                 info = (new CowGrowth(this.rc, this).getBestLocation(MIDX - CowGrowth.bigBoxSize, MIDY - CowGrowth.bigBoxSize, rc.getMapWidth(), rc.getMapHeight()));
                 comms.setP_PASTR_SCORE1(info[2]);
-                comms.setP_PASTR_LOC1(info);
+                comms.setP_PASTR_LOC1(new MapLocation(info[0], info[1]));
                 break;
             case TOP_LEFT:
                 comms.sendSearchCoordinates(0, 0, rc.getMapWidth(), MIDY + CowGrowth.bigBoxSize);
                 info = (new CowGrowth(this.rc, this).getBestLocation(0, MIDY - CowGrowth.bigBoxSize, MIDX - CowGrowth.bigBoxSize, rc.getMapHeight()));
                 comms.setP_PASTR_SCORE1(info[2]);
-                comms.setP_PASTR_LOC1(info);
+                comms.setP_PASTR_LOC1(new MapLocation(info[0], info[1]));
                 break;
             case BOTTOM_RIGHT:
                 comms.sendSearchCoordinates(0, MIDY - CowGrowth.bigBoxSize, rc.getMapWidth(), rc.getMapHeight());
                 info = (new CowGrowth(this.rc, this).getBestLocation(MIDX - CowGrowth.bigBoxSize, 0, rc.getMapWidth(), MIDY + CowGrowth.bigBoxSize));
                 comms.setP_PASTR_SCORE1(info[2]);
-                comms.setP_PASTR_LOC1(info);
+                comms.setP_PASTR_LOC1(new MapLocation(info[0], info[1]));
                 break;
             case BOTTOM_LEFT:
                 comms.sendSearchCoordinates(0, 0, MIDX + CowGrowth.bigBoxSize, rc.getMapHeight());
                 info = (new CowGrowth(this.rc, this).getBestLocation(MIDX - CowGrowth.bigBoxSize, MIDY - CowGrowth.bigBoxSize, rc.getMapWidth(), rc.getMapHeight()));
                 comms.setP_PASTR_SCORE1(info[2]);
-                comms.setP_PASTR_LOC1(info);
+                comms.setP_PASTR_LOC1(new MapLocation(info[0], info[1]));
                 break;
             }
-            int[] bestLoc = comms.wait_P_PASTR_LOC_2();
-            bestPastrLoc = new MapLocation(bestLoc[0], bestLoc[1]);
-            comms.sendSquadCommand(0, new Command(CommandType.BUILD_PASTR, bestPastrLoc));
-        } else if (currentSquadNum == 1) {
-            if (tryToSpawn(myHQ.directionTo(bestPastrLoc))) {
-                comms.setNewSpawnSquad(currentSquadNum);
-                comms.sendSquadCommand(currentSquadNum++, new Command(CommandType.BUILD_NOISE_TOWER, bestPastrLoc));
-            }
-        // If there is one HQ and one soldier
-        } else if (currentSquadNum == 2){
-            //after telling them where to go, consider spawning
-            if (tryToSpawn(directionToEnemyHQ)) {
-                comms.setNewSpawnSquad(currentSquadNum);
-                currentSquadSize ++;
-                if (currentSquadSize > 3) {
-                    comms.sendSquadCommand(currentSquadNum, new Command(CommandType.DEFEND_PASTR, bestPastrLoc));
-                    comms.sendSquadCommand(++currentSquadNum, new Command(CommandType.RALLY_POINT, myHQ));
-                    currentSquadSize = 0;
+            bestPastrLoc = comms.wait_P_PASTR_LOC_2();
+        }
+    }
 
-                } else {
-                    comms.sendSquadCommand(currentSquadNum, new Command(CommandType.RALLY_POINT, myHQ));
-                }
+
+    public boolean isPastrAlive() throws GameActionException {
+        comms.getPastrLoc();
+        BuildingInfo info = comms.getBuildingStatus(BuildingType.PASTR);
+        
+        switch (info.status) {
+        case IS_COMPUTING:
+        case IN_CONSTRUCTION:
+        case ALL_GOOD:
+        case UNDER_ATTACK:
+            return ((curRound - info.roundNum) < 2); // If the round number hasn't been updated in 2 rounds, it is dead
+        case NOTHING:
+        default:
+            return false;
+        }
+    }
+    
+    public boolean isTowerAlive() throws GameActionException {
+        comms.getPastrLoc();
+        BuildingInfo info = comms.getBuildingStatus(BuildingType.TOWER);
+        
+        switch (info.status) {
+        case IS_COMPUTING:
+        case IN_CONSTRUCTION:
+        case ALL_GOOD:
+        case UNDER_ATTACK:
+            return ((curRound - info.roundNum) < 2); // If the round number hasn't been updated in 2 rounds, it is dead
+        case NOTHING:
+        default:
+            return false;
+        }
+    }
+    
+    public void trySpawnPastr() throws GameActionException {
+        if (bestPastrLoc != null) {
+            if (tryToSpawn(myHQ.directionTo(bestPastrLoc))) {
+                comms.setNewSpawnSquad(0);
+                comms.sendSquadCommand(0, new Command(CommandType.BUILD_PASTR, myHQ));
             }
         } else {
-            
-            //if the enemy builds a pastr, tell squad 2 to go there.
-            MapLocation[] enemyPastrs = rc.sensePastrLocations(rc.getTeam().opponent());
-            if(enemyPastrs.length > 0) {
-                MapLocation closestPastr = null;
-                double closestDist = Integer.MAX_VALUE;
-                double currDist;
-                
-                
-                // Determine if our current pastr target has been killed while simultaneously finding the next closest one.
-                boolean hasKilledTarget = true;
-                for (int i = 0; i < enemyPastrs.length; i ++) {
-                    if (currPastrTarget != null && enemyPastrs[i].equals(currPastrTarget)) {
-                        // We are already heading towards this one, so lets not so anything else
-                        hasKilledTarget = false;
-                        break;
-                    } else {
-                        currDist = enemyPastrs[i].distanceSquaredTo(InfoCache.HQLocation);
-                        if (currDist < closestDist) {
-                            closestPastr = enemyPastrs[i];
-                            closestDist = currDist;
-                        }
-                    }
-                }
-                
-                if (hasKilledTarget && closestPastr != null) {
-                    Command toSend = new Command(CommandType.ATTACK_POINT, closestPastr);
-                    currPastrTarget = closestPastr;
-                    //comms.sendSquadCommand(currentSquadNum, toSend);
-                    squadCommands[currentSquadNum] = toSend;
-                }
-            }
-            
-            //after telling them where to go, consider spawning
             if (tryToSpawn(directionToEnemyHQ)) {
-                comms.setNewSpawnSquad(currentSquadNum);
-                comms.sendSquadCommand(currentSquadNum, new Command(CommandType.ATTACK_PASTR, currPastrTarget));
+                comms.setNewSpawnSquad(0);
+                comms.sendSquadCommand(0, new Command(CommandType.BUILD_PASTR, myHQ));
             }
         }
-        
-        Robot[] enemyRobots = rc.senseNearbyGameObjects(Robot.class,10000,rc.getTeam().opponent());
-        MapLocation[] robotLocations = VectorFunctions.robotsToLocations(enemyRobots, rc);
-        
-        if(robotLocations.length>0){
-            MapLocation closestEnemyLoc = VectorFunctions.findClosest(robotLocations, rc.getLocation());
-            if(rc.isActive() && rc.canAttackSquare(closestEnemyLoc)){
-                rc.attackSquare(closestEnemyLoc);
+    }
+    
+    public void trySpawnTower() throws GameActionException {
+        if (bestPastrLoc != null) {
+            if (tryToSpawn(myHQ.directionTo(bestPastrLoc))) {
+                comms.setNewSpawnSquad(1);
+                comms.sendSquadCommand(1, new Command(CommandType.BUILD_NOISE_TOWER, myHQ));
+            }
+        } else {
+            if (tryToSpawn(directionToEnemyHQ)) {
+                comms.setNewSpawnSquad(1);        
+                comms.sendSquadCommand(1, new Command(CommandType.BUILD_NOISE_TOWER, myHQ));
             }
         }
+    }
+    
+    
+    int squadSize = 0;
+    int squadNumber = 2; // Start at 2 because the slots 0 and 1 are reserved for the buildings
+    
+    public void trySpawnSquadMember(int numBots, MapLocation rallyPoint, Command command) throws GameActionException {
+        if (tryToSpawn(myHQ.directionTo(rallyPoint))) {
+            comms.setNewSpawnSquad(squadNumber);
+            squadSize ++;
+            if (squadSize > numBots) {
+                comms.sendSquadCommand(squadNumber++, command);
+                squadSize = 0;
+
+            } else {
+                comms.sendSquadCommand(squadNumber, new Command(CommandType.RALLY_POINT, rallyPoint));
+            }
+        }
+    }
+
+    
+    public MapLocation getPastrTarget(MapLocation currentTarget) {        
+        MapLocation[] enemyPastrs = rc.sensePastrLocations(rc.getTeam().opponent());
+        if(enemyPastrs.length > 0) {
+            return getPastrTarget(enemyPastrs, currentTarget);
+        } else {
+            return null;
+        }
+    }
+
+    
+    /*
+     * Returns the closest pastr or the currentTarget if it still exists.
+     */
+    public MapLocation getPastrTarget(MapLocation[] enemyPastrs, MapLocation currentTarget) {
+        MapLocation closestPastr = null;
+        double closestDist = Integer.MAX_VALUE;
+        double currDist;
+        
+        // Determine if our current pastr target has been killed while simultaneously finding the next closest one.
+        for (int i = 0; i < enemyPastrs.length; i ++) {
+            if (currentTarget != null && enemyPastrs[i].equals(currentTarget)) {
+                // We are already heading towards this one, so lets not do anything else
+                return currentTarget;
+            } else {
+                currDist = enemyPastrs[i].distanceSquaredTo(InfoCache.HQLocation);
+                if (currDist < closestDist) {
+                    closestPastr = enemyPastrs[i];
+                    closestDist = currDist;
+                }
+            }
+        }
+        return closestPastr;
     }
 
 

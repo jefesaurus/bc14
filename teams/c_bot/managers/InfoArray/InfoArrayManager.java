@@ -24,11 +24,19 @@ public class InfoArrayManager {
     static final int NEW_SPAWN_SQUAD_SLOT = ENEMY_HQ_LOC_SLOT + 1;
     static final int GLOBAL_COMMAND_SLOT = ENEMY_HQ_LOC_SLOT + 1;
     static final int SQUAD_COMMAND_SLOTS = GLOBAL_COMMAND_SLOT + Command.packedSize;
-    static final int PASTR_LOC_SLOT = 1000 ;
+    
+    // Status of the buildings (tower and pastr)
+    static final int PASTR_STATUS_SLOTS = SQUAD_COMMAND_SLOTS + Command.packedSize*NUM_SQUADS;
+    static final int TOWER_STATUS_SLOTS = PASTR_STATUS_SLOTS + BuildingInfo.packedSize*1;
+
+    
+
+    static final int PASTR_LOC_SLOT = 1000;
     static final int P_PASTR_LOC1 = PASTR_LOC_SLOT + 1;
     static final int P_PASTR_SCORE1 = P_PASTR_LOC1 + 1;
     static final int P_PASTR_LOC2 = P_PASTR_SCORE1 + 1;
     static final int P_PASTR_SCORE2 = P_PASTR_LOC2 + 1;
+
     static final int P_SEARCH_COORDINATES = P_PASTR_SCORE2 + 2;
 
     public InfoArrayManager(RobotController rc) throws GameActionException {
@@ -36,24 +44,22 @@ public class InfoArrayManager {
     }
     
     
-    public int[] wait_P_PASTR_LOC_1() throws GameActionException {
+    public MapLocation wait_P_PASTR_LOC_1() throws GameActionException {
         int msg = rc.readBroadcast(P_PASTR_LOC1);
         while (msg == 0) {
             msg = rc.readBroadcast(P_PASTR_LOC1);
             rc.yield();
         }
-        int[] decode = {(msg / 100) % 100, msg % 100};
-        return decode;
+        return new MapLocation(msg / 100, msg % 100);
     }
     
-    public int[] wait_P_PASTR_LOC_2() throws GameActionException {
+    public MapLocation wait_P_PASTR_LOC_2() throws GameActionException {
         int msg = rc.readBroadcast(P_PASTR_LOC2);
         while (msg == 0) {
             msg = rc.readBroadcast(P_PASTR_LOC2);
             rc.yield();
         }
-        int[] decode = {(msg / 100) % 100, msg % 100};
-        return decode;
+        return new MapLocation(msg / 100, msg % 100);
     }
     
     public int wait_P_PASTR_SCORE_1() throws GameActionException {
@@ -95,16 +101,16 @@ public class InfoArrayManager {
         return msg_decode;
     }  
     
-    public void setP_PASTR_LOC1(int[] msg) throws GameActionException{
-        rc.broadcast(P_PASTR_LOC1, msg[0] * 100 + msg[1]);
+    public void setP_PASTR_LOC1(MapLocation loc) throws GameActionException{
+        rc.broadcast(P_PASTR_LOC1, loc.x * 100 + loc.y);
     }
     
     public void setP_PASTR_SCORE1(int score) throws GameActionException{
         rc.broadcast(P_PASTR_SCORE1, score);
     }
     
-    public void setP_PASTR_LOC2(int[] msg) throws GameActionException {
-        rc.broadcast(P_PASTR_LOC2,  msg[0] * 100 + msg[1]);
+    public void setP_PASTR_LOC2(MapLocation loc) throws GameActionException {
+        rc.broadcast(P_PASTR_LOC2, loc.x * 100 + loc.y);
     }
     
     public void setP_PASTR_SCORE2(int score) throws GameActionException{
@@ -172,5 +178,37 @@ public class InfoArrayManager {
         }
         squadCommand.toUnpacked(packets);
         return squadCommand;
+    }
+
+    public void setBuildingStatus(BuildingType buildingType, BuildingInfo info) throws GameActionException {
+        int[] packets = info.toPacked();
+        int firstSlot = PASTR_STATUS_SLOTS;
+        switch(buildingType) {
+        case TOWER:
+            firstSlot = TOWER_STATUS_SLOTS;
+        default:
+            break;
+        }        for (int i = 0; i < packets.length; i ++) {
+            rc.broadcast(firstSlot + i, packets[i]);
+        }
+    }
+
+    public BuildingInfo getBuildingStatus(BuildingType buildingType) throws GameActionException {
+        BuildingInfo info = new BuildingInfo();
+        int[] packets = new int[BuildingInfo.packedSize];
+        int firstSlot = PASTR_STATUS_SLOTS;
+        switch(buildingType) {
+        case TOWER:
+            firstSlot = TOWER_STATUS_SLOTS;
+        default:
+            break;
+        }
+        for (int i = 0; i < packets.length; i ++) {
+            packets[i] = rc.readBroadcast(firstSlot + i);
+
+        }
+
+        info.toUnpacked(packets);
+        return info;
     }
 }

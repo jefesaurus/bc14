@@ -47,6 +47,10 @@ public abstract class BaseRobot {
     protected static ArrayList<MapLocation> path = new ArrayList<MapLocation>();
     protected static int bigBoxSize = 5;
     public static int myBand = 100;
+    
+    public static int executeStartRound = 0;
+    public static int executeStartByte = 0;
+
 
 
     public BaseRobot(RobotController myRC) throws GameActionException {
@@ -90,7 +94,7 @@ public abstract class BaseRobot {
                 } else if (bcUsed < GameConstants.BYTECODE_LIMIT) {
                     // We *can* use these
                 } else {
-                    // We went over?
+                    System.out.println("Hit bytecode limit");
                 }
             } catch (Exception e) {
                 e.printStackTrace();
@@ -105,7 +109,20 @@ public abstract class BaseRobot {
         curRound = Clock.getRoundNum();
         curLoc = rc.getLocation();
     }
+    public void resetClock() {
+        executeStartRound = Clock.getRoundNum();
+        executeStartByte = Clock.getBytecodeNum();
+    }
 
+    private boolean checkClock() {
+        if(executeStartRound==Clock.getRoundNum())
+            return false;
+        int currRound = Clock.getRoundNum();
+        //int byteCount = (GameConstants.BYTECODE_LIMIT-executeStartByte) + (currRound-executeStartRound-1) * GameConstants.BYTECODE_LIMIT + Clock.getBytecodeNum();
+//        dbg.println('e', "Warning: Over Bytecode @"+executeStartTime+"-"+currRound +":"+ byteCount);
+        return true;
+    }
+    
     /** Should be overridden by any robot that wants to do movements. 
      * @return a new MoveInfo structure that either represents a spawn, a move, or a turn
      */
