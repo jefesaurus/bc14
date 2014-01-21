@@ -171,7 +171,6 @@ public class HQRobot extends BaseRobot {
                 } else {
                     comms.sendSquadCommand(currentSquadNum, new Command(CommandType.RALLY_POINT, myHQ));
                 }
-                rc.yield();
             }
         } else {
             
@@ -223,7 +222,6 @@ public class HQRobot extends BaseRobot {
                 rc.attackSquare(closestEnemyLoc);
             }
         }
-        rc.yield();
     }
 
 

@@ -8,7 +8,7 @@ public class CowGrowth {
     
     private RobotController rc;
     public double[][] cowGrowth;
-    public static int bigBoxSize = 3;
+    public static int bigBoxSize = 4;
     public double[][] coarseCowGrowth;
     public double[][] finalLocations;
     public final BaseRobot myBot;
@@ -35,7 +35,7 @@ public class CowGrowth {
         int width = (fx - sx + 1)/bigBoxSize;
         int height = (fy - sy + 1)/bigBoxSize;
         coarseCowGrowth = new double[width][height];
-        System.out.println("search coordinates: (" + sx + "," + sy + "), (" + fx + "," + fy + ")");
+        //System.out.println("search coordinates: (" + sx + "," + sy + "), (" + fx + "," + fy + ")");
 
         for(int x=sx; x < fx; x++){
             int x_bigBox = (x - sx)/bigBoxSize;
@@ -54,7 +54,7 @@ public class CowGrowth {
                     continue;
                 }
                 
-                coarseCowGrowth[x_bigBox][y_bigBox] += (Math.pow(cowGrowth[x][y], 8) / (100 + myBot.myHQ.distanceSquaredTo(new MapLocation(x,y)))) * (100 + myBot.enemyHQ.distanceSquaredTo(new MapLocation(x,y)));
+                coarseCowGrowth[x_bigBox][y_bigBox] += (Math.pow(cowGrowth[x][y], 4) / (100 + myBot.myHQ.distanceSquaredTo(new MapLocation(x,y)))) * (100 + myBot.enemyHQ.distanceSquaredTo(new MapLocation(x,y)));
                 //System.out.println("End: " + Clock.getBytecodeNum());
             }
         }
@@ -73,7 +73,7 @@ public class CowGrowth {
             }
         }
         
-        printCoarseMap(finalLocations);
+        //printCoarseMap(finalLocations);
     }
     
     private static boolean isValid(int x, int y, int width, int height) {
@@ -97,9 +97,9 @@ public class CowGrowth {
                 }
             }
         }
-        System.out.println("finalx: " + finalx + " finaly: " + finaly);
+        //System.out.println("finalx: " + finalx + " finaly: " + finaly);
         int[] best = { sx + finalx*bigBoxSize + bigBoxSize/2, sy + finaly*bigBoxSize + bigBoxSize/2, (int) maxGrowth };
-        System.out.println("best loc: " + "(" + best[0] + "," + best[1] + ")" + " score: " + best[2]);
+        //System.out.println("best loc: " + "(" + best[0] + "," + best[1] + ")" + " score: " + best[2]);
         return best;
     }
     

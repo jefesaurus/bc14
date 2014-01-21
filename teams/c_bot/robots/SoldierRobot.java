@@ -7,6 +7,7 @@ import c_bot.util.Util;
 import c_bot.util.VectorFunctions;
 import c_bot.robots.SoldierRobot.ConstructionState;
 import c_bot.util.CowGrowth;
+import battlecode.common.Clock;
 import battlecode.common.Direction;
 import battlecode.common.GameActionException;
 import battlecode.common.MapLocation;
@@ -88,6 +89,7 @@ public class SoldierRobot extends BaseRobot {
             break;
 
         case DEFEND_PASTR:
+           
             if (pastrToDefend == null) {
                 MapLocation possiblePastrLoc = comms.getPastrLoc();
                 if(possiblePastrLoc.x > -1) {
@@ -99,9 +101,9 @@ public class SoldierRobot extends BaseRobot {
             if(nearbyEnemies.length > 0) {
                 if (rc.isActive()) {
                     if (pastrToDefend == null) {
-                        defensiveMicro(nearbyEnemies, pastrToDefend);
-                    } else {
                         defensiveMicro(nearbyEnemies, destination);
+                    } else {
+                        defensiveMicro(nearbyEnemies, pastrToDefend);
                     }
                 }
             } else {
@@ -196,7 +198,6 @@ public class SoldierRobot extends BaseRobot {
                 break;
             }
         }
-        rc.yield();
 
     }
 
@@ -221,7 +222,6 @@ public class SoldierRobot extends BaseRobot {
 
     protected void simpleMove(Direction chosenDirection, boolean sneak) throws GameActionException{
         if(chosenDirection == Direction.OMNI || chosenDirection == Direction.NONE){
-            rc.yield();
             return;
         }
         if(rc.isActive()){
@@ -437,7 +437,7 @@ public class SoldierRobot extends BaseRobot {
             rc.setIndicatorString(0, "Yielding");
 
             // Hold ground, don't waste movement
-            rc.yield();
+            //rc.yield();
         }
     }
     
@@ -459,7 +459,7 @@ public class SoldierRobot extends BaseRobot {
         // Tally up counters & metrics
         RobotInfo lowestHealthAttackableSoldier = null;
         double lowestSoldierHealth = Integer.MAX_VALUE;
-
+        
         for (Robot b : nearbyEnemies) {
             RobotInfo info = rc.senseRobotInfo(b);
 
@@ -467,7 +467,9 @@ public class SoldierRobot extends BaseRobot {
                 numEnemySoldiers++;
                 enemyCentroidX += info.location.x;
                 enemyCentroidY += info.location.y;
+                
                 if (rc.canAttackSquare(info.location)) {
+
                     if (info.health < lowestSoldierHealth) {
                         lowestHealthAttackableSoldier = info;
                         lowestSoldierHealth = info.health;
@@ -478,7 +480,6 @@ public class SoldierRobot extends BaseRobot {
                         numEnemiesAlmostInRange++;
                     }
                 }
-                break;
             }
         }
         
@@ -486,17 +487,19 @@ public class SoldierRobot extends BaseRobot {
         if (lowestHealthAttackableSoldier == null) {
             if (numEnemySoldiers > 0) {
                 if (numEnemiesAlmostInRange > 0) {
-                    rc.yield();
+                    return;
                 } else {
                     if (curLoc.distanceSquaredTo(pointInFrontOfPastrToDefend) > 3) {
                         simpleBug(pointInFrontOfPastrToDefend, false);
                     } else {
-                        rc.yield();
+                        return;
                     }
                 }   
             }
         } else {
+            rc.setIndicatorString(2, "lowest health attackable soldier: " + lowestHealthAttackableSoldier.location.toString());
             if (rc.isActive() && rc.canAttackSquare(lowestHealthAttackableSoldier.location)) {
+                
                 rc.attackSquare(lowestHealthAttackableSoldier.location);
             }
         }

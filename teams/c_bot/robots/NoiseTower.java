@@ -216,11 +216,11 @@ public class NoiseTower extends BaseRobot {
     private void linearInit() {
         MapLocation[] linearLocs = { 
                       rc.getLocation().add(range,0),
-                      rc.getLocation().add(-range,0),
                       rc.getLocation().add(0,range),
+                      rc.getLocation().add(-range,0),
                       rc.getLocation().add(0,-range),
-                      rc.getLocation().add((int) (range / 1.414),(int) (range / 1.414)),
                       rc.getLocation().add((int) (range / 1.414),(int) -(range / 1.414)),
+                      rc.getLocation().add((int) (range / 1.414),(int) (range / 1.414)),
                       rc.getLocation().add((int) -(range / 1.414), (int) (range / 1.414)),
                       rc.getLocation().add((int) -(range / 1.414), (int) -(range / 1.414)),
         };
@@ -253,15 +253,15 @@ public class NoiseTower extends BaseRobot {
                 switch(i){
                 case 0:
                     this.linearLocs[i] = new MapLocation(this.linearLocs[i].x - 1, this.linearLocs[i].y);
-                case 1:
-                    this.linearLocs[i] = new MapLocation(this.linearLocs[i].x + 1, this.linearLocs[i].y);
                 case 2:
+                    this.linearLocs[i] = new MapLocation(this.linearLocs[i].x + 1, this.linearLocs[i].y);
+                case 1:
                     this.linearLocs[i] = new MapLocation(this.linearLocs[i].x, this.linearLocs[i].y - 1);
                 case 3:
                     this.linearLocs[i] = new MapLocation(this.linearLocs[i].x, this.linearLocs[i].y + 1);
-                case 4:
-                    this.linearLocs[i] = new MapLocation(this.linearLocs[i].x - 1, this.linearLocs[i].y - 1);
                 case 5:
+                    this.linearLocs[i] = new MapLocation(this.linearLocs[i].x - 1, this.linearLocs[i].y - 1);
+                case 4:
                     this.linearLocs[i] = new MapLocation(this.linearLocs[i].x - 1, this.linearLocs[i].y + 1);
                 case 6:
                     this.linearLocs[i] = new MapLocation(this.linearLocs[i].x + 1, this.linearLocs[i].y - 1);
