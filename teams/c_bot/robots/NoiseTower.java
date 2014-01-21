@@ -103,6 +103,10 @@ package c_bot.robots;
             }
  */
 
+import c_bot.managers.InfoArray.BuildingInfo;
+import c_bot.managers.InfoArray.BuildingStatus;
+import c_bot.managers.InfoArray.BuildingType;
+import battlecode.common.Clock;
 import battlecode.common.GameActionException;
 import battlecode.common.MapLocation;
 import battlecode.common.RobotController;
@@ -126,6 +130,7 @@ public class NoiseTower extends BaseRobot {
     public final int NOISE_THRESHOLD_BORDER = 20;
     public NoiseTower(RobotController rc) throws GameActionException {
         super(rc);
+        comms.setBuildingStatus(BuildingType.TOWER, new BuildingInfo(curRound, BuildingStatus.ALL_GOOD, curLoc));
         rangeSquared = rc.getType().attackRadiusMaxSquared;
         range = (int) Math.sqrt(rangeSquared);
         setHerdingMethod(HerdingMethod.LINEAR);
@@ -133,6 +138,7 @@ public class NoiseTower extends BaseRobot {
     
     @Override
     public void run() throws GameActionException {
+
         switch (this.method) {
         case RADIAL:
             break;
@@ -151,6 +157,8 @@ public class NoiseTower extends BaseRobot {
                     int err = dx;
                     while (new MapLocation(x,y).distanceSquaredTo(rc.getLocation()) > FUZZY_BORDER) {
                         while (true) {
+                            comms.setBuildingStatus(BuildingType.TOWER, new BuildingInfo(Clock.getRoundNum(), BuildingStatus.ALL_GOOD, curLoc));
+
                             if (rc.isActive()) {
                                 if (new MapLocation(x,y).distanceSquaredTo(rc.getLocation()) < NOISE_THRESHOLD_BORDER) {
                                     rc.attackSquareLight(new MapLocation(x,y));             
@@ -173,6 +181,8 @@ public class NoiseTower extends BaseRobot {
                     int err = dy;
                     while (new MapLocation(x,y).distanceSquaredTo(rc.getLocation()) > FUZZY_BORDER) {
                         while (true) {
+                            comms.setBuildingStatus(BuildingType.TOWER, new BuildingInfo(Clock.getRoundNum(), BuildingStatus.ALL_GOOD, curLoc));
+
                             if (rc.isActive()) {
                                 if (new MapLocation(x,y).distanceSquaredTo(rc.getLocation()) < NOISE_THRESHOLD_BORDER) {
                                     rc.attackSquareLight(new MapLocation(x,y));             
