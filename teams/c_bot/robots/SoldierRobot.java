@@ -63,7 +63,7 @@ public class SoldierRobot extends BaseRobot {
     @Override
     public void run() throws GameActionException {
         currentCommand = comms.getSquadCommand(squadNum);
-        rc.setIndicatorString(2, currentCommand.toString());
+        rc.setIndicatorString(2, "Squad num: " + squadNum + ", " + currentCommand.toString());
         Robot[] nearbyEnemies = rc.senseNearbyGameObjects(Robot.class, 100000, rc.getTeam().opponent());
         MapLocation destination = currentCommand.loc;
 

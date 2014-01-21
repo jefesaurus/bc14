@@ -109,10 +109,11 @@ public class HQRobot extends BaseRobot {
                 currentPastrTarget = getPastrTarget(currentPastrTarget);
                 if (currentPastrTarget != null) {
                     Command attackPastr = new Command(CommandType.ATTACK_PASTR, currentPastrTarget);
-                    for (int i = 0; i < squadNumber; i ++) {
-                        comms.sendSquadCommand(i, attackPastr);
+                    if (!trySpawnSquadMember(3, rallyPoint, attackPastr)){
+                        for (int i = 2; i < squadNumber; i ++) {
+                            comms.sendSquadCommand(i, attackPastr);
+                        }
                     }
-                    trySpawnSquadMember(3, rallyPoint, new Command(CommandType.ATTACK_PASTR, currentPastrTarget));
                 } else {
                     trySpawnSquadMember(3, rallyPoint, new Command(CommandType.RALLY_POINT, rallyPoint));
                 }
@@ -261,18 +262,19 @@ public class HQRobot extends BaseRobot {
     int squadSize = 0;
     int squadNumber = 2; // Start at 2 because the slots 0 and 1 are reserved for the buildings
     
-    public void trySpawnSquadMember(int numBots, MapLocation rallyPoint, Command command) throws GameActionException {
+    public boolean trySpawnSquadMember(int numBots, MapLocation rallyPoint, Command command) throws GameActionException {
         if (tryToSpawn(myHQ.directionTo(rallyPoint))) {
             comms.setNewSpawnSquad(squadNumber);
             squadSize ++;
             if (squadSize >= numBots) {
-                System.out.println("Sending squad: " + squadNumber + " Command: " + command.toString());
                 comms.sendSquadCommand(squadNumber++, command);
                 squadSize = 0;
             } else {
-                System.out.println("Keeping squad: " + squadNumber + " Size: " + squadSize + " Command: " + command.toString());
                 comms.sendSquadCommand(squadNumber, new Command(CommandType.RALLY_POINT, rallyPoint));
             }
+            return true;
+        } else {
+            return false;
         }
     }
 
