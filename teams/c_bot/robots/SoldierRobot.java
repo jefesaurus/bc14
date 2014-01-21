@@ -63,7 +63,7 @@ public class SoldierRobot extends BaseRobot {
     @Override
     public void run() throws GameActionException {
         currentCommand = comms.getSquadCommand(squadNum);
-        rc.setIndicatorString(2, currentCommand.toString());
+        rc.setIndicatorString(2, "Squad num: " + squadNum + ", " + currentCommand.toString());
         Robot[] nearbyEnemies = rc.senseNearbyGameObjects(Robot.class, 100000, rc.getTeam().opponent());
         MapLocation destination = currentCommand.loc;
 
@@ -94,13 +94,13 @@ public class SoldierRobot extends BaseRobot {
            
             if (pastrToDefend == null) {
                 MapLocation possiblePastrLoc = comms.getPastrLoc();
-                if(possiblePastrLoc.x > -1) {
+                if(possiblePastrLoc.x > 0) {
                     pastrToDefend = possiblePastrLoc;
                     // Calculate the true defensive waypoint with the new info
                     pointInFrontOfPastrToDefend = possiblePastrLoc;//VectorFunctions.compoundMapAdd(pastrToDefend, enemyHQ, 4);
                 }
             }
-            if(nearbyEnemies.length > 0) {
+            if(curLoc.distanceSquaredTo(pointInFrontOfPastrToDefend) <= 36 && nearbyEnemies.length > 0) {
                 if (rc.isActive()) {
                     if (pastrToDefend == null) {
                         defensiveMicro(nearbyEnemies, destination);
@@ -392,6 +392,8 @@ public class SoldierRobot extends BaseRobot {
         // Retreat logic:
         // Only attack HQ pastr combo if we have unit parity/advantage
         if (enemyHQPastrCombo) {
+            rc.setIndicatorString(0, "Enemy + pastr");
+
             if (unitDisadvantage < -1) {
                 // Attack PASTR
                 if (rc.canAttackSquare(pastrLoc)) {
@@ -406,21 +408,22 @@ public class SoldierRobot extends BaseRobot {
             // If we are in HQ range but there is no pastr, or we have a unit disdvantage, we need to bounce
         } else if(enemyHQInRange || unitDisadvantage > 0) {
             // Retreat away or home
-            Direction toMove = this.curLoc.directionTo(this.myHQ);
             rc.setIndicatorString(0, "retreating because enemy hq or unit disad");
             simpleBug(this.myHQ, false);
         } else if(healthDisadvantage) {
             // Retreat to center of allies
-            Direction toMove = this.curLoc.directionTo(allyCentroid);
-            rc.setIndicatorString(0, "retreating because health disad");
-            simpleBug(this.myHQ, false);
+            rc.setIndicatorString(0, "retreating because health disadvantage");
+            simpleBug(allyCentroid, false);
         }
 
         if (lowestHealthAttackableSoldier != null) {
             // If we can attack, we do
-            rc.setIndicatorString(0, "attacking");
             if(rc.isActive()){ 
+                rc.setIndicatorString(1, "attacking");
+
                 rc.attackSquare(lowestHealthAttackableSoldier.location);
+            } else {
+                rc.setIndicatorString(1, "would attack but not active");
             }
 
             // TODO tune what we consider a good enough advantage
@@ -441,7 +444,7 @@ public class SoldierRobot extends BaseRobot {
             }
 
         } else {
-            rc.setIndicatorString(0, "Yielding");
+            rc.setIndicatorString(1, "Yielding");
 
             // Hold ground, don't waste movement
             //rc.yield();

@@ -40,7 +40,7 @@ public class HQRobot extends BaseRobot {
     MapLocation bestPastrLoc = null;
 
     public enum Strategy {
-        GREEDY, SAFE_MACRO, RUSH 
+        GREEDY, SAFE_MACRO, DEFENSE_MACRO, RUSH 
     }
     
     Strategy strat;
@@ -59,9 +59,9 @@ public class HQRobot extends BaseRobot {
         if (mapSize > 2500) {
             strat = Strategy.GREEDY;
         } else if (mapSize <= 900) {
-            strat = Strategy.RUSH;
+            strat = Strategy.GREEDY;
         } else {
-            strat = Strategy.SAFE_MACRO;
+            strat = Strategy.DEFENSE_MACRO;
         }
         
         if (Math.abs(this.curLoc.x - (width / 2)) < 5) {
@@ -92,8 +92,9 @@ public class HQRobot extends BaseRobot {
     }
     
     MapLocation currentPastrTarget = null;
-    boolean safeMacroInitDone = false;
 
+    boolean safeMacroInitDone = false;
+    public int SWARM_SIZE = 4;
     @Override
     public void run() throws GameActionException {
         Robot[] enemyRobots = rc.senseNearbyGameObjects(Robot.class,10000,rc.getTeam().opponent());
@@ -113,12 +114,13 @@ public class HQRobot extends BaseRobot {
                 currentPastrTarget = getPastrTarget(currentPastrTarget);
                 if (currentPastrTarget != null) {
                     Command attackPastr = new Command(CommandType.ATTACK_PASTR, currentPastrTarget);
-                    for (int i = 0; i < squadNumber; i ++) {
-                        comms.sendSquadCommand(i, attackPastr);
+                    if (!trySpawnSquadMember(SWARM_SIZE, rallyPoint, attackPastr)){
+                        for (int i = 2; i < squadNumber; i ++) {
+                            comms.sendSquadCommand(i, attackPastr);
+                        }
                     }
-                    trySpawnSquadMember(3, rallyPoint, new Command(CommandType.ATTACK_PASTR, currentPastrTarget));
                 } else {
-                    trySpawnSquadMember(3, rallyPoint, new Command(CommandType.RALLY_POINT, rallyPoint));
+                    trySpawnSquadMember(SWARM_SIZE, rallyPoint, new Command(CommandType.RALLY_POINT, rallyPoint));
                 }
             }
             break;
@@ -171,6 +173,35 @@ public class HQRobot extends BaseRobot {
                     }
                 }
                 
+            }
+            break;
+        case DEFENSE_MACRO:
+            if (bestPastrLoc == null) {
+                trySpawnPastr();
+                calcBestPastrLocation();
+            }
+            if (!isPastrAlive()) {
+                trySpawnPastr();
+            } else if (!isTowerAlive()) {
+                trySpawnTower();
+            } else {
+                currentPastrTarget = getPastrTarget(currentPastrTarget);
+                Command defPastr = new Command(CommandType.DEFEND_PASTR, bestPastrLoc);
+                if (currentPastrTarget != null) {
+                    Command attackPastr = new Command(CommandType.ATTACK_PASTR, currentPastrTarget);
+                    trySpawnSquadMember(SWARM_SIZE, rallyPoint, attackPastr);
+                    
+                } else {
+                    if (!trySpawnSquadMember(1, rallyPoint, defPastr)) {
+                        for (int i = 2; i <= squadNumber; i ++) {
+                            comms.sendSquadCommand(i, defPastr);
+                        }
+                    } else {
+                        for (int i = 2; i < squadNumber; i ++) {
+                            comms.sendSquadCommand(i, defPastr);
+                        }
+                    }
+                }
             }
             break;
         }
@@ -311,19 +342,20 @@ public class HQRobot extends BaseRobot {
     int squadSize = 0;
     int squadNumber = 2; // Start at 2 because the slots 0 and 1 are reserved for the buildings
     
-    public void trySpawnSquadMember(int numBots, MapLocation rallyPoint, Command command) throws GameActionException {
+    public boolean trySpawnSquadMember(int numBots, MapLocation rallyPoint, Command command) throws GameActionException {
         if (tryToSpawn(myHQ.directionTo(rallyPoint))) {
             comms.setNewSpawnSquad(squadNumber);
             NumUnitsProduced++;
             squadSize ++;
             if (squadSize >= numBots) {
-                System.out.println("Sending squad: " + squadNumber + " Command: " + command.toString());
                 comms.sendSquadCommand(squadNumber++, command);
                 squadSize = 0;
             } else {
-                System.out.println("Keeping squad: " + squadNumber + " Size: " + squadSize + " Command: " + command.toString());
                 comms.sendSquadCommand(squadNumber, new Command(CommandType.RALLY_POINT, rallyPoint));
             }
+            return true;
+        } else {
+            return false;
         }
     }
 
