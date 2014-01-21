@@ -191,11 +191,12 @@ public class SoldierRobot extends BaseRobot {
                 MapLocation exactLoc = comms.wait_PASTR_LOC_FINAL();
                 adjacent = findAdjacentSquare(exactLoc);
                 nav.setDestination(adjacent);
-                if (!this.curLoc.equals(adjacent)) {
+                if (!rc.getLocation().equals(adjacent)) {
                     rc.setIndicatorString(2, "Not adjacent");
 
                     simpleBug(adjacent, false);
                 } else {
+                    rc.setIndicatorString(2, "is adjacent");
                     if (rc.isActive()) {
                         rc.construct(RobotType.NOISETOWER);
                     }
