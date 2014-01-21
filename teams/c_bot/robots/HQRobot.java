@@ -28,6 +28,8 @@ public class HQRobot extends BaseRobot {
         RIGHT
     };
     
+ 
+    
     public HQLocation HQ_LOCATION;
     static MapLocation rallyPoint;    
     static MapLocation defenseRallyPoint = null;    
@@ -42,10 +44,11 @@ public class HQRobot extends BaseRobot {
     }
     
     Strategy strat;
+    int NumUnitsProduced = 0;
 
     public HQRobot(RobotController rc) throws GameActionException {
         super(rc);
-        rallyPoint = myHQ;
+        rallyPoint = VectorFunctions.mldivide(VectorFunctions.mladd(this.myHQ, this.enemyHQ), 2);
         directionToEnemyHQ = this.myHQ.directionTo(this.enemyHQ);
         
         
@@ -89,6 +92,7 @@ public class HQRobot extends BaseRobot {
     }
     
     MapLocation currentPastrTarget = null;
+    boolean safeMacroInitDone = false;
 
     @Override
     public void run() throws GameActionException {
@@ -122,6 +126,52 @@ public class HQRobot extends BaseRobot {
         case RUSH:
             break;
         case SAFE_MACRO:
+            if (!safeMacroInitDone) {
+                if (NumUnitsProduced < 6) {
+                    trySpawnSquadMember(6, rallyPoint, new Command(CommandType.RALLY_POINT, rallyPoint));
+                } else {
+                    currentPastrTarget = getPastrTarget(currentPastrTarget);
+                    if (currentPastrTarget != null) {
+                        Command attackPastr = new Command(CommandType.ATTACK_PASTR, currentPastrTarget);
+                        for (int i = 2; i < squadNumber; i ++) {
+                            comms.sendSquadCommand(i, attackPastr);
+                        }
+                    }
+                    safeMacroInitDone = true;
+                    
+                }
+            } else {
+                
+                //System.out.println("now we buildin pastr");
+                if (bestPastrLoc == null) {
+
+                    trySpawnPastr();
+                    System.out.println("try to spawn");
+
+                    calcBestPastrLocation();
+                    System.out.println("now we buildin pastr");
+
+                }
+                if (!isPastrAlive()) {
+                    trySpawnPastr();
+                } else if (!isTowerAlive()) {
+                    trySpawnTower();
+                } else {
+                    System.out.println("should be making more soldiers");
+
+                    currentPastrTarget = getPastrTarget(currentPastrTarget);
+                    if (currentPastrTarget != null) {
+                        Command attackPastr = new Command(CommandType.ATTACK_PASTR, currentPastrTarget);
+                        for (int i = 2; i < squadNumber; i ++) {
+                            comms.sendSquadCommand(i, attackPastr);
+                        }
+                        trySpawnSquadMember(3, rallyPoint, new Command(CommandType.ATTACK_PASTR, currentPastrTarget));
+                    } else {
+                        trySpawnSquadMember(3, rallyPoint, new Command(CommandType.RALLY_POINT, rallyPoint));
+                    }
+                }
+                
+            }
             break;
         }
     }
@@ -264,6 +314,7 @@ public class HQRobot extends BaseRobot {
     public void trySpawnSquadMember(int numBots, MapLocation rallyPoint, Command command) throws GameActionException {
         if (tryToSpawn(myHQ.directionTo(rallyPoint))) {
             comms.setNewSpawnSquad(squadNumber);
+            NumUnitsProduced++;
             squadSize ++;
             if (squadSize >= numBots) {
                 System.out.println("Sending squad: " + squadNumber + " Command: " + command.toString());
