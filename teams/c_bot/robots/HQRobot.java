@@ -38,7 +38,7 @@ public class HQRobot extends BaseRobot {
     MapLocation bestPastrLoc = null;
 
     public enum Strategy {
-        GREEDY, SAFE_MACRO, RUSH 
+        GREEDY, SAFE_MACRO, DEFENSE_MACRO, RUSH 
     }
     
     Strategy strat;
@@ -56,9 +56,9 @@ public class HQRobot extends BaseRobot {
         if (mapSize > 2500) {
             strat = Strategy.GREEDY;
         } else if (mapSize <= 900) {
-            strat = Strategy.RUSH;
+            strat = Strategy.GREEDY;
         } else {
-            strat = Strategy.SAFE_MACRO;
+            strat = Strategy.DEFENSE_MACRO;
         }
         
         if (Math.abs(this.curLoc.x - (width / 2)) < 5) {
@@ -89,7 +89,7 @@ public class HQRobot extends BaseRobot {
     }
     
     MapLocation currentPastrTarget = null;
-
+    public int SWARM_SIZE = 4;
     @Override
     public void run() throws GameActionException {
         Robot[] enemyRobots = rc.senseNearbyGameObjects(Robot.class,10000,rc.getTeam().opponent());
@@ -109,13 +109,13 @@ public class HQRobot extends BaseRobot {
                 currentPastrTarget = getPastrTarget(currentPastrTarget);
                 if (currentPastrTarget != null) {
                     Command attackPastr = new Command(CommandType.ATTACK_PASTR, currentPastrTarget);
-                    if (!trySpawnSquadMember(3, rallyPoint, attackPastr)){
+                    if (!trySpawnSquadMember(SWARM_SIZE, rallyPoint, attackPastr)){
                         for (int i = 2; i < squadNumber; i ++) {
                             comms.sendSquadCommand(i, attackPastr);
                         }
                     }
                 } else {
-                    trySpawnSquadMember(3, rallyPoint, new Command(CommandType.RALLY_POINT, rallyPoint));
+                    trySpawnSquadMember(SWARM_SIZE, rallyPoint, new Command(CommandType.RALLY_POINT, rallyPoint));
                 }
             }
             break;
@@ -123,6 +123,35 @@ public class HQRobot extends BaseRobot {
         case RUSH:
             break;
         case SAFE_MACRO:
+            break;
+        case DEFENSE_MACRO:
+            if (bestPastrLoc == null) {
+                trySpawnPastr();
+                calcBestPastrLocation();
+            }
+            if (!isPastrAlive()) {
+                trySpawnPastr();
+            } else if (!isTowerAlive()) {
+                trySpawnTower();
+            } else {
+                currentPastrTarget = getPastrTarget(currentPastrTarget);
+                Command defPastr = new Command(CommandType.DEFEND_PASTR, bestPastrLoc);
+                if (currentPastrTarget != null) {
+                    Command attackPastr = new Command(CommandType.ATTACK_PASTR, currentPastrTarget);
+                    trySpawnSquadMember(SWARM_SIZE, rallyPoint, attackPastr);
+                    
+                } else {
+                    if (!trySpawnSquadMember(1, rallyPoint, defPastr)) {
+                        for (int i = 2; i <= squadNumber; i ++) {
+                            comms.sendSquadCommand(i, defPastr);
+                        }
+                    } else {
+                        for (int i = 2; i < squadNumber; i ++) {
+                            comms.sendSquadCommand(i, defPastr);
+                        }
+                    }
+                }
+            }
             break;
         }
     }
