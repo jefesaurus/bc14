@@ -57,11 +57,11 @@ public class HQRobot extends BaseRobot {
         
         int mapSize = width*height;
         if (mapSize > 2500) {
-            strat = Strategy.GREEDY;
+            strat = Strategy.SAFE_MACRO;
         } else if (mapSize <= 900) {
-            strat = Strategy.GREEDY;
+            strat = Strategy.SAFE_MACRO;
         } else {
-            strat = Strategy.DEFENSE_MACRO;
+            strat = Strategy.SAFE_MACRO;
         }
         
         if (Math.abs(this.curLoc.x - (width / 2)) < 5) {
@@ -144,14 +144,12 @@ public class HQRobot extends BaseRobot {
                 }
             } else {
                 
-                //System.out.println("now we buildin pastr");
                 if (bestPastrLoc == null) {
-
+                    while (!rc.isActive()) {
+                        rc.yield();
+                    }
                     trySpawnPastr();
-                    System.out.println("try to spawn");
-
                     calcBestPastrLocation();
-                    System.out.println("now we buildin pastr");
 
                 }
                 if (!isPastrAlive()) {
@@ -159,8 +157,6 @@ public class HQRobot extends BaseRobot {
                 } else if (!isTowerAlive()) {
                     trySpawnTower();
                 } else {
-                    System.out.println("should be making more soldiers");
-
                     currentPastrTarget = getPastrTarget(currentPastrTarget);
                     if (currentPastrTarget != null) {
                         Command attackPastr = new Command(CommandType.ATTACK_PASTR, currentPastrTarget);
