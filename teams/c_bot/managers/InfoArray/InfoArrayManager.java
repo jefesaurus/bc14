@@ -22,6 +22,10 @@ public class InfoArrayManager {
     static final int NEW_SPAWN_SQUAD_SLOT = ENEMY_HQ_LOC_SLOT + 1;
     static final int GLOBAL_COMMAND_SLOT = ENEMY_HQ_LOC_SLOT + 1;
     static final int SQUAD_COMMAND_SLOTS = GLOBAL_COMMAND_SLOT + Command.packedSize;
+    
+    
+    static final int SQUAD_STATUS_SLOTS = SQUAD_COMMAND_SLOTS + Command.packedSize*NUM_SQUADS;
+
     static final int PASTR_LOC_SLOT = 1000 ;
 
 
@@ -89,5 +93,25 @@ public class InfoArrayManager {
         }
         squadCommand.toUnpacked(packets);
         return squadCommand;
+    }
+    
+
+    public void setSquadStatus(int squadNum, SquadStatus status) throws GameActionException {
+        int[] packets = status.toPacked();
+        for (int i = 0; i < packets.length; i ++) {
+            rc.broadcast(SQUAD_COMMAND_SLOTS + squadNum*SquadStatus.packedSize + i, packets[i]);
+        }
+    }
+    
+
+    public SquadStatus getSquadStatus(int squadNum) throws GameActionException {
+        SquadStatus squadStatus = new SquadStatus();
+        int[] packets = new int[SquadStatus.packedSize];
+        
+        for (int i = 0; i < packets.length; i ++) {
+            packets[i] = rc.readBroadcast(SQUAD_STATUS_SLOTS + squadNum*SquadStatus.packedSize + i);
+        }
+        squadStatus.toUnpacked(packets);
+        return squadStatus;
     }
 }

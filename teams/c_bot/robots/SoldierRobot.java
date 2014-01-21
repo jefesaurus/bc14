@@ -91,7 +91,7 @@ public class SoldierRobot extends BaseRobot {
                 if(possiblePastrLoc.x > -1) {
                     pastrToDefend = possiblePastrLoc;
                     // Calculate the true defensive waypoint with the new info
-                    pointInFrontOfPastrToDefend = VectorFunctions.compoundMapAdd(pastrToDefend, enemyHQ, 4);
+                    pointInFrontOfPastrToDefend = possiblePastrLoc;//VectorFunctions.compoundMapAdd(pastrToDefend, enemyHQ, 4);
                 }
             }
             if(nearbyEnemies.length > 0) {
@@ -105,7 +105,7 @@ public class SoldierRobot extends BaseRobot {
             } else {
                 // Initially populate the defense waypoint to the approximation:
                 if (pointInFrontOfPastrToDefend == null) {
-                    pointInFrontOfPastrToDefend = VectorFunctions.compoundMapAdd(destination, enemyHQ, 4);
+                    pointInFrontOfPastrToDefend = destination;
                 }
                 simpleBug(pointInFrontOfPastrToDefend, false);
             } 
@@ -183,8 +183,6 @@ public class SoldierRobot extends BaseRobot {
                 break;
             }
         }
-        rc.yield();
-
     }
 
     private MapLocation findAdjacentSquare(MapLocation loc) {
@@ -473,17 +471,21 @@ public class SoldierRobot extends BaseRobot {
         if (lowestHealthAttackableSoldier == null) {
             if (numEnemySoldiers > 0) {
                 if (numEnemiesAlmostInRange > 0) {
+                    rc.setIndicatorString(1, "Enemies are close to being in range.");
                     rc.yield();
                 } else {
-                    if (curLoc.distanceSquaredTo(pointInFrontOfPastrToDefend) > 3) {
+                    if (curLoc.distanceSquaredTo(pointInFrontOfPastrToDefend) > 4) {
+                        rc.setIndicatorString(1, "Bugging: Because no one to attack and not in range of base.");
                         simpleBug(pointInFrontOfPastrToDefend, false);
                     } else {
+                        rc.setIndicatorString(1, "Yield: Because no one to attack and in range of base.");
                         rc.yield();
                     }
                 }   
             }
         } else {
             if (rc.isActive() && rc.canAttackSquare(lowestHealthAttackableSoldier.location)) {
+                rc.setIndicatorString(1, "Attacking");
                 rc.attackSquare(lowestHealthAttackableSoldier.location);
             }
         }

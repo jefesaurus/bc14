@@ -79,42 +79,15 @@ public class HQRobot extends BaseRobot {
             }
         } else {
             
-            //if the enemy builds a pastr, tell squad 2 to go there.
-            MapLocation[] enemyPastrs = rc.sensePastrLocations(rc.getTeam().opponent());
-            if(enemyPastrs.length > 0) {
-                MapLocation closestPastr = null;
-                double closestDist = Integer.MAX_VALUE;
-                double currDist;
-                
-                
-                // Determine if our current pastr target has been killed while simultaneously finding the next closest one.
-                boolean hasKilledTarget = true;
-                for (int i = 0; i < enemyPastrs.length; i ++) {
-                    if (currPastrTarget != null && enemyPastrs[i].equals(currPastrTarget)) {
-                        // We are already heading towards this one, so lets not so anything else
-                        hasKilledTarget = false;
-                        break;
-                    } else {
-                        currDist = enemyPastrs[i].distanceSquaredTo(InfoCache.HQLocation);
-                        if (currDist < closestDist) {
-                            closestPastr = enemyPastrs[i];
-                            closestDist = currDist;
-                        }
-                    }
-                }
-                
-                if (hasKilledTarget && closestPastr != null) {
-                    Command toSend = new Command(CommandType.ATTACK_POINT, closestPastr);
-                    currPastrTarget = closestPastr;
-                    //comms.sendSquadCommand(currentSquadNum, toSend);
-                    squadCommands[currentSquadNum] = toSend;
-                }
-            }
             
             //after telling them where to go, consider spawning
             if (tryToSpawn(directionToEnemyHQ)) {
                 comms.setNewSpawnSquad(currentSquadNum);
-                comms.sendSquadCommand(currentSquadNum, new Command(CommandType.ATTACK_PASTR, currPastrTarget));
+                if (currPastrTarget == null) {
+                    comms.sendSquadCommand(currentSquadNum, new Command(CommandType.RALLY_POINT, myHQ));
+                } else {
+                    comms.sendSquadCommand(currentSquadNum, new Command(CommandType.ATTACK_POINT, currPastrTarget));
+                }
             }
         }
         
@@ -128,6 +101,51 @@ public class HQRobot extends BaseRobot {
             }
         }
         rc.yield();
+    }
+    
+    int currentPastrSquad = 0;
+    
+    public boolean checkOnOurPastr() {
+        if (bestPastrLoc == null) {
+            bestPastrLoc = new CowGrowth(rc, this).getBestLocation();
+
+            comms.sendSquadCommand(0, new Command(CommandType.BUILD_PASTR, bestPastrLoc));
+        }
+    }
+    
+    public MapLocation getPastrTarget(MapLocation currentTarget) {        
+        MapLocation[] enemyPastrs = rc.sensePastrLocations(rc.getTeam().opponent());
+        if(enemyPastrs.length > 0) {
+            return getPastrTarget(enemyPastrs, currentTarget);
+        } else {
+            return null;
+        }
+    }
+
+    
+    /*
+     * Returns the closest pastr or the currentTarget if it still exists.
+     */
+    public MapLocation getPastrTarget(MapLocation[] enemyPastrs, MapLocation currentTarget) {
+        MapLocation closestPastr = null;
+        double closestDist = Integer.MAX_VALUE;
+        double currDist;
+        
+        // Determine if our current pastr target has been killed while simultaneously finding the next closest one.
+        for (int i = 0; i < enemyPastrs.length; i ++) {
+            if (currentTarget != null && enemyPastrs[i].equals(currentTarget)) {
+                // We are already heading towards this one, so lets not do anything else
+                return currentTarget;
+            } else {
+                currDist = enemyPastrs[i].distanceSquaredTo(InfoCache.HQLocation);
+                if (currDist < closestDist) {
+                    closestPastr = enemyPastrs[i];
+                    closestDist = currDist;
+                }
+            }
+        }
+        
+        return closestPastr;
     }
 
 
