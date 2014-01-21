@@ -1,24 +1,19 @@
 package c_bot.robots;
 
-import c_bot.Constants;
-import c_bot.managers.InfoCache;
-import c_bot.managers.InfoArray.BuildingType;
-import c_bot.managers.InfoArray.Command;
-import c_bot.managers.InfoArray.CommandType;
-import c_bot.managers.InfoArray.BuildingInfo;
-import c_bot.managers.InfoArray.BuildingStatus;
-import c_bot.util.CowGrowth;
-import c_bot.util.FastSet;
-import c_bot.util.VectorFunctions;
-import b_bot.robots.HQRobot.HQLocation;
 import battlecode.common.Direction;
 import battlecode.common.GameActionException;
 import battlecode.common.GameConstants;
-import battlecode.common.GameObject;
 import battlecode.common.MapLocation;
 import battlecode.common.Robot;
 import battlecode.common.RobotController;
-import battlecode.common.RobotType;
+import c_bot.Constants;
+import c_bot.managers.InfoCache;
+import c_bot.managers.InfoArray.BuildingInfo;
+import c_bot.managers.InfoArray.BuildingType;
+import c_bot.managers.InfoArray.Command;
+import c_bot.managers.InfoArray.CommandType;
+import c_bot.util.CowGrowth;
+import c_bot.util.VectorFunctions;
 
 public class HQRobot extends BaseRobot {
     
@@ -37,25 +32,34 @@ public class HQRobot extends BaseRobot {
     static MapLocation rallyPoint;    
     static MapLocation defenseRallyPoint = null;    
 
-    static Command[] squadCommands = new Command[999];
     Direction directionToEnemyHQ;
     
     // Our favored pastr location
     MapLocation bestPastrLoc = null;
- 
-    // Our target in the enemies pastrs
-    MapLocation currPastrTarget = null;
+
+    public enum Strategy {
+        GREEDY, SAFE_MACRO, RUSH 
+    }
+    
+    Strategy strat;
 
     public HQRobot(RobotController rc) throws GameActionException {
         super(rc);
         rallyPoint = myHQ;
-
-
         directionToEnemyHQ = this.myHQ.directionTo(this.enemyHQ);
         
         
         int width = rc.getMapWidth();
         int height = rc.getMapHeight();
+        
+        int mapSize = width*height;
+        if (mapSize > 2500) {
+            strat = Strategy.GREEDY;
+        } else if (mapSize <= 900) {
+            strat = Strategy.RUSH;
+        } else {
+            strat = Strategy.SAFE_MACRO;
+        }
         
         if (Math.abs(this.curLoc.x - (width / 2)) < 5) {
             if (this.curLoc.y < (height / 2)) {
@@ -82,27 +86,44 @@ public class HQRobot extends BaseRobot {
                 this.HQ_LOCATION = HQLocation.BOTTOM_RIGHT;
             }
         }
-        trySpawnPastr();
-        calcBestPastrLocation();
-        rc.yield();
     }
     
-    
+    MapLocation currentPastrTarget = null;
 
     @Override
-    public void run() throws GameActionException {   
+    public void run() throws GameActionException {
         Robot[] enemyRobots = rc.senseNearbyGameObjects(Robot.class,10000,rc.getTeam().opponent());
         tryToAttack(enemyRobots);
         
-        if (!isPastrAlive()) {
-            trySpawnPastr();
-        } else if (!isTowerAlive()) {
-            trySpawnTower();
-        } else {
-            trySpawnSquadMember(3, rallyPoint, new Command(CommandType.ATTACK_PASTR, getPastrTarget(currPastrTarget)));
+        switch(strat) {
+        case GREEDY:
+            if (bestPastrLoc == null) {
+                trySpawnPastr();
+                calcBestPastrLocation();
+            }
+            if (!isPastrAlive()) {
+                trySpawnPastr();
+            } else if (!isTowerAlive()) {
+                trySpawnTower();
+            } else {
+                currentPastrTarget = getPastrTarget(currentPastrTarget);
+                if (currentPastrTarget != null) {
+                    Command attackPastr = new Command(CommandType.ATTACK_PASTR, currentPastrTarget);
+                    for (int i = 0; i < squadNumber; i ++) {
+                        comms.sendSquadCommand(i, attackPastr);
+                    }
+                    trySpawnSquadMember(3, rallyPoint, new Command(CommandType.ATTACK_PASTR, currentPastrTarget));
+                } else {
+                    trySpawnSquadMember(3, rallyPoint, new Command(CommandType.RALLY_POINT, rallyPoint));
+                }
+            }
+            break;
+            
+        case RUSH:
+            break;
+        case SAFE_MACRO:
+            break;
         }
-        
-        rc.yield();
     }
     
     public void tryToAttack(Robot[] enemyRobots) throws GameActionException {
@@ -244,11 +265,12 @@ public class HQRobot extends BaseRobot {
         if (tryToSpawn(myHQ.directionTo(rallyPoint))) {
             comms.setNewSpawnSquad(squadNumber);
             squadSize ++;
-            if (squadSize > numBots) {
+            if (squadSize >= numBots) {
+                System.out.println("Sending squad: " + squadNumber + " Command: " + command.toString());
                 comms.sendSquadCommand(squadNumber++, command);
                 squadSize = 0;
-
             } else {
+                System.out.println("Keeping squad: " + squadNumber + " Size: " + squadSize + " Command: " + command.toString());
                 comms.sendSquadCommand(squadNumber, new Command(CommandType.RALLY_POINT, rallyPoint));
             }
         }
