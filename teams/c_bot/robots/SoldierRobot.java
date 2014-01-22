@@ -1,15 +1,15 @@
 package c_bot.robots;
 
 import c_bot.Constants;
-import c_bot.managers.InfoArray.BuildingType;
-import c_bot.managers.InfoArray.Command;
 import c_bot.managers.InfoArray.BuildingInfo;
 import c_bot.managers.InfoArray.BuildingStatus;
+import c_bot.managers.InfoArray.BuildingType;
+import c_bot.managers.InfoArray.Command;
 import c_bot.navigation.NavigationMode;
-import c_bot.util.Util;
-import c_bot.util.VectorFunctions;
 import c_bot.robots.SoldierRobot.ConstructionState;
 import c_bot.util.CowGrowth;
+import c_bot.util.Util;
+import c_bot.util.VectorFunctions;
 import battlecode.common.Clock;
 import battlecode.common.Direction;
 import battlecode.common.GameActionException;

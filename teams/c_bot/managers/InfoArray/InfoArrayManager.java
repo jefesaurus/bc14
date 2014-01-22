@@ -1,7 +1,7 @@
 package c_bot.managers.InfoArray;
 
-import c_bot.util.VectorFunctions;
 import c_bot.managers.InfoArray.Command;
+import c_bot.util.VectorFunctions;
 import battlecode.common.GameActionException;
 import battlecode.common.MapLocation;
 import battlecode.common.RobotController;

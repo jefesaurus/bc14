@@ -1,11 +1,5 @@
 package c_bot.robots;
 
-import battlecode.common.Direction;
-import battlecode.common.GameActionException;
-import battlecode.common.GameConstants;
-import battlecode.common.MapLocation;
-import battlecode.common.Robot;
-import battlecode.common.RobotController;
 import c_bot.Constants;
 import c_bot.managers.InfoCache;
 import c_bot.managers.InfoArray.BuildingInfo;
@@ -14,6 +8,12 @@ import c_bot.managers.InfoArray.Command;
 import c_bot.managers.InfoArray.CommandType;
 import c_bot.util.CowGrowth;
 import c_bot.util.VectorFunctions;
+import battlecode.common.Direction;
+import battlecode.common.GameActionException;
+import battlecode.common.GameConstants;
+import battlecode.common.MapLocation;
+import battlecode.common.Robot;
+import battlecode.common.RobotController;
 
 public class HQRobot extends BaseRobot {
     
