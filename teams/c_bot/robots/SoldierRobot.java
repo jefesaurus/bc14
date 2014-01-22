@@ -98,6 +98,8 @@ public class SoldierRobot extends BaseRobot {
                     pastrToDefend = possiblePastrLoc;
                     // Calculate the true defensive waypoint with the new info
                     pointInFrontOfPastrToDefend = possiblePastrLoc;//VectorFunctions.compoundMapAdd(pastrToDefend, enemyHQ, 4);
+                } else {
+                    pointInFrontOfPastrToDefend = destination;
                 }
             }
             if(curLoc.distanceSquaredTo(pointInFrontOfPastrToDefend) <= 36 && nearbyEnemies.length > 0) {
