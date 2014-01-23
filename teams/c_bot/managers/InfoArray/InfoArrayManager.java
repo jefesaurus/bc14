@@ -38,24 +38,11 @@ public class InfoArrayManager {
     static final int P_PASTR_SCORE2 = P_PASTR_LOC2 + 1;
 
     static final int P_SEARCH_COORDINATES = P_PASTR_SCORE2 + 2;
-    
-    static final int PASTR_ALARM = P_SEARCH_COORDINATES + 1;
 
     public InfoArrayManager(RobotController rc) throws GameActionException {
         this.rc = rc;
     }
     
-    public void soundAlarm() throws GameActionException {
-        rc.broadcast(PASTR_ALARM, 1);
-    }
-    
-    public void resetAlarm() throws GameActionException {
-        rc.broadcast(PASTR_ALARM, 0);
-    }
-    
-    public int checkAlarm() throws GameActionException {
-        return rc.readBroadcast(PASTR_ALARM);
-    }
     
     public MapLocation wait_P_PASTR_LOC_1() throws GameActionException {
         int msg = rc.readBroadcast(P_PASTR_LOC1);
