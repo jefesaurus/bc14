@@ -2,6 +2,7 @@ package c_bot.robots;
 
 import c_bot.Constants;
 import c_bot.managers.InfoCache;
+import c_bot.managers.InfoArray.BattleFront;
 import c_bot.managers.InfoArray.BuildingInfo;
 import c_bot.managers.InfoArray.BuildingType;
 import c_bot.managers.InfoArray.Command;
@@ -57,11 +58,11 @@ public class HQRobot extends BaseRobot {
         
         int mapSize = width*height;
         if (mapSize > 2500) {
-            strat = Strategy.RUSH;
+            strat = Strategy.DEFENSE_MACRO;
         } else if (mapSize <= 900) {
             strat = Strategy.RUSH;
         } else {
-            strat = Strategy.RUSH;
+            strat = Strategy.DEFENSE_MACRO;
         }
         
         if (Math.abs(this.curLoc.x - (width / 2)) < 5) {
@@ -112,6 +113,7 @@ public class HQRobot extends BaseRobot {
                 trySpawnTower();
             } else {
                 currentPastrTarget = getPastrTarget(currentPastrTarget);
+
                 if (currentPastrTarget != null) {
                     Command attackPastr = new Command(CommandType.ATTACK_PASTR, currentPastrTarget);
                     if (!trySpawnSquadMember(SWARM_SIZE, rallyPoint, attackPastr)){
@@ -134,8 +136,24 @@ public class HQRobot extends BaseRobot {
                         comms.sendSquadCommand(i, attackPastr);
                     }
                 }
+            } else if (squadNumber < 4) {
+                if (!trySpawnSquadMember(SWARM_SIZE, rallyPoint, new Command(CommandType.RALLY_POINT, rallyPoint))) {
+                    BattleFront front = comms.getBattle();
+                    if (front.enemyCentroid.x > 0) {
+                        for (int i = 2; i < squadNumber; i ++) {
+                            comms.sendSquadCommand(i, new Command(CommandType.ATTACK_POINT, front.enemyCentroid));
+                        }
+                    }
+                }
             } else {
-                trySpawnSquadMember(SWARM_SIZE, rallyPoint, new Command(CommandType.RALLY_POINT, rallyPoint));
+                if (!trySpawnSquadMember(1, rallyPoint, new Command(CommandType.RALLY_POINT, rallyPoint))) {
+                    BattleFront front = comms.getBattle();
+                    if (front.enemyCentroid.x > 0) {
+                        for (int i = 2; i < squadNumber; i ++) {
+                            comms.sendSquadCommand(i, new Command(CommandType.ATTACK_POINT, front.enemyCentroid));
+                        }
+                    }
+                }
             }
             break;
         case SAFE_MACRO:
@@ -151,7 +169,6 @@ public class HQRobot extends BaseRobot {
                         }
                     }
                     safeMacroInitDone = true;
-                    
                 }
             } else {
                 
@@ -310,7 +327,7 @@ public class HQRobot extends BaseRobot {
         case IN_CONSTRUCTION:
         case ALL_GOOD:
         case UNDER_ATTACK:
-            return ((curRound - info.roundNum) < 2); // If the round number hasn't been updated in 2 rounds, it is dead
+            return ((curRound - info.roundNum) < 5); // If the round number hasn't been updated in 2 rounds, it is dead
         case NOTHING:
         default:
             return false;

@@ -83,12 +83,13 @@ public class InfoArrayManager {
     
     public MapLocation wait_PASTR_LOC_FINAL() throws GameActionException {
         int msg = rc.readBroadcast(PASTR_LOC_SLOT);
-        while (msg == 0) {
-            msg = rc.readBroadcast(PASTR_LOC_SLOT);
-            rc.yield();
+        if (msg == 0) {
+            return null;
+        } else {
+            return new MapLocation(msg / 100, msg % 100);
         }
-        return new MapLocation(msg / 100, msg % 100);
     }
+    
     public void sendSearchCoordinates(int sx, int sy, int fx, int fy) throws GameActionException {
         rc.broadcast(P_SEARCH_COORDINATES-1, sx*100 + sy);
         rc.broadcast(P_SEARCH_COORDINATES, fx*100 + fy);
@@ -225,6 +226,7 @@ public class InfoArrayManager {
         for (int i = 0; i < packets.length; i ++) {
             packets[i] = rc.readBroadcast(BATTLE_FRONT_SLOT + i);
         }
+        battleFront.toUnpacked(packets);
         return battleFront;
     }
 }

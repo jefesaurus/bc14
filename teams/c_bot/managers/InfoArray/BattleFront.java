@@ -10,6 +10,9 @@ public class BattleFront implements ArrayPackable {
     static int packedSize = 3;
     
     public BattleFront() {
+        enemyCentroid = new MapLocation(-1, -1);
+        roundNum = -1;
+        numEnemies = -1;
     }
     
     public BattleFront(int roundNum, int numEnemies, MapLocation enemyCentroid) {

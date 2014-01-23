@@ -74,7 +74,7 @@ public class SoldierRobot extends BaseRobot {
         case ATTACK_POINT:
             if(nearbyEnemies.length > 0) {
                 if (rc.isActive()) {
-                    offensiveMicro(nearbyEnemies);
+                    offensiveMicro(nearbyEnemies, null);
                 }
             } else {
                 simpleBug(destination, false);
@@ -84,7 +84,7 @@ public class SoldierRobot extends BaseRobot {
         case ATTACK_PASTR:
             if(nearbyEnemies.length > 0) {
                 if (rc.isActive()) {
-                    offensiveMicro(nearbyEnemies);
+                    offensiveMicro(nearbyEnemies, destination);
                 }
             } else {
                 simpleBug(destination, false);
@@ -189,9 +189,10 @@ public class SoldierRobot extends BaseRobot {
                     this.cstate = ConstructionState.MOVE_TO_EXACT_LOC;
                 }
             case MOVE_TO_EXACT_LOC:
-                rc.setIndicatorString(1, "Finding exact location");
-
                 MapLocation exactLoc = comms.wait_PASTR_LOC_FINAL();
+                if (exactLoc == null) {
+                    break;
+                }
                 adjacent = findAdjacentSquare(exactLoc);
                 nav.setDestination(adjacent);
                 if (!rc.getLocation().equals(adjacent)) {
@@ -281,7 +282,7 @@ public class SoldierRobot extends BaseRobot {
      * BATTLE MICRO
      */
 
-    public void offensiveMicro(Robot[] nearbyEnemies) throws GameActionException {
+    public void offensiveMicro(Robot[] nearbyEnemies, MapLocation inPastrLoc) throws GameActionException {
         // Enemy unittype counters
         boolean enemyHQInSight = false;
         boolean enemyHQInRange = false;
@@ -300,7 +301,7 @@ public class SoldierRobot extends BaseRobot {
         // Tally up counters & metrics
         RobotInfo lowestHealthAttackableSoldier = null;
         double lowestSoldierHealth = Integer.MAX_VALUE;
-        MapLocation pastrLoc = null;
+        MapLocation pastrLoc = inPastrLoc;
         MapLocation towerLoc;
         for (Robot b : nearbyEnemies) {
             RobotInfo info = rc.senseRobotInfo(b);
@@ -349,9 +350,12 @@ public class SoldierRobot extends BaseRobot {
             if (curRound - existing.roundNum > 3 || existing.numEnemies < numEnemySoldiers) {
                 comms.setBattle(new BattleFront(curRound, numEnemySoldiers, enemyCentroid));
             }
-        } else {
+        } else if (pastrLoc == null) {
             BattleFront existing = comms.getBattle();
             enemyCentroid = existing.enemyCentroid;
+            rc.setIndicatorString(0, "Pulled in enemy centroid");
+        } else {
+            enemyCentroid = pastrLoc;
         }
 
 
@@ -415,7 +419,7 @@ public class SoldierRobot extends BaseRobot {
             // If we are in HQ range but there is no pastr, or we have a unit disdvantage, we need to bounce
         } else if(enemyHQInRange || unitDisadvantage > 0) {
             // Retreat away or home
-            rc.setIndicatorString(0, "retreating because enemy hq or unit disad");
+            rc.setIndicatorString(1, "retreating because enemy hq or unit disad");
             simpleBug(this.myHQ, false);
         } /*else if(healthDisadvantage) {
             // Retreat to center of allies
@@ -426,7 +430,7 @@ public class SoldierRobot extends BaseRobot {
         if (lowestHealthAttackableSoldier != null) {
             // If we can attack, we do
             if(rc.isActive()){ 
-                rc.setIndicatorString(1, "attacking");
+                rc.setIndicatorString(1, "attacking lowest health");
 
                 rc.attackSquare(lowestHealthAttackableSoldier.location);
             } else {
@@ -467,11 +471,11 @@ public class SoldierRobot extends BaseRobot {
         int numEnemySoldiers = 0;
         int numEnemiesAlmostInRange = 0;
 
-
+        /*
         // Useful metrics
         int enemyCentroidX = 0;
         int enemyCentroidY = 0;
-
+         */
 
         // Tally up counters & metrics
         RobotInfo lowestHealthAttackableSoldier = null;
@@ -482,9 +486,10 @@ public class SoldierRobot extends BaseRobot {
 
             if(info.type == RobotType.SOLDIER) {
                 numEnemySoldiers++;
+                /*
                 enemyCentroidX += info.location.x;
                 enemyCentroidY += info.location.y;
-                
+                */
                 if (rc.canAttackSquare(info.location)) {
 
                     if (info.health < lowestSoldierHealth) {
@@ -506,9 +511,9 @@ public class SoldierRobot extends BaseRobot {
                 if (numEnemiesAlmostInRange > 0) {
                     return;
                 } else {
-                    if (curLoc.distanceSquaredTo(pointInFrontOfPastrToDefend) > 4) {
+                    if (curLoc.distanceSquaredTo(pointInFrontOfPastrToDefend) > 25) {
                         rc.setIndicatorString(1, "Bugging: Because no one to attack and not in range of base.");
-                        simpleBug(pointInFrontOfPastrToDefend, false);
+                        simpleBug(pointInFrontOfPastrToDefend, true);
                     } else {
                         return;
                     }
