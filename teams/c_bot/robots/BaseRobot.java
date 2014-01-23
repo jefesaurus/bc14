@@ -67,10 +67,10 @@ public abstract class BaseRobot {
         comms = new InfoArrayManager(rc);
         nav = new NavigationSystem(this);
         mc = new MapCacheSystem(this);
-        
         updateRoundVariables();
-        
-        
+        rc.setIndicatorString(0,"Round: " + curRound);
+        rc.setIndicatorString(1,"Round: " + curRound);
+        rc.setIndicatorString(2,"Round: " + curRound);
     }
 
     public abstract void run() throws GameActionException;

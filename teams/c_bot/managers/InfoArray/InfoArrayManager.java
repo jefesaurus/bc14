@@ -28,8 +28,8 @@ public class InfoArrayManager {
     // Status of the buildings (tower and pastr)
     static final int PASTR_STATUS_SLOTS = SQUAD_COMMAND_SLOTS + Command.packedSize*NUM_SQUADS;
     static final int TOWER_STATUS_SLOTS = PASTR_STATUS_SLOTS + BuildingInfo.packedSize*1;
+    static final int BATTLE_FRONT_SLOT = TOWER_STATUS_SLOTS + BuildingInfo.packedSize*1;
 
-    
 
     static final int PASTR_LOC_SLOT = 1000;
     static final int P_PASTR_LOC1 = PASTR_LOC_SLOT + 1;
@@ -209,5 +209,22 @@ public class InfoArrayManager {
 
         info.toUnpacked(packets);
         return info;
+    }
+    
+    public void setBattle(BattleFront battle) throws GameActionException {
+        int[] packets = battle.toPacked();
+        for (int i = 0; i < packets.length; i ++) {
+            rc.broadcast(BATTLE_FRONT_SLOT + i, packets[i]);
+        }
+    }
+    
+    public BattleFront getBattle() throws GameActionException {
+        BattleFront battleFront = new BattleFront();
+        int[] packets = new int[BattleFront.packedSize];
+        
+        for (int i = 0; i < packets.length; i ++) {
+            packets[i] = rc.readBroadcast(BATTLE_FRONT_SLOT + i);
+        }
+        return battleFront;
     }
 }

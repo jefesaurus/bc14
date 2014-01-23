@@ -1,6 +1,7 @@
 package c_bot.robots;
 
 import c_bot.Constants;
+import c_bot.managers.InfoArray.BattleFront;
 import c_bot.managers.InfoArray.BuildingInfo;
 import c_bot.managers.InfoArray.BuildingStatus;
 import c_bot.managers.InfoArray.BuildingType;
@@ -301,10 +302,8 @@ public class SoldierRobot extends BaseRobot {
         double lowestSoldierHealth = Integer.MAX_VALUE;
         MapLocation pastrLoc = null;
         MapLocation towerLoc;
-
         for (Robot b : nearbyEnemies) {
             RobotInfo info = rc.senseRobotInfo(b);
-
             switch(info.type) {
             case SOLDIER:
                 numEnemySoldiers++;
@@ -340,13 +339,19 @@ public class SoldierRobot extends BaseRobot {
                 break;
             }
         }
+
         MapLocation enemyCentroid;
 
         if (numEnemySoldiers > 0) {
             // Finalize the averaged metrics
             enemyCentroid = new MapLocation(enemyCentroidX/numEnemySoldiers, enemyCentroidY/numEnemySoldiers);
+            BattleFront existing = comms.getBattle();
+            if (curRound - existing.roundNum > 3 || existing.numEnemies < numEnemySoldiers) {
+                comms.setBattle(new BattleFront(curRound, numEnemySoldiers, enemyCentroid));
+            }
         } else {
-            enemyCentroid = this.enemyHQ;
+            BattleFront existing = comms.getBattle();
+            enemyCentroid = existing.enemyCentroid;
         }
 
 
@@ -412,11 +417,11 @@ public class SoldierRobot extends BaseRobot {
             // Retreat away or home
             rc.setIndicatorString(0, "retreating because enemy hq or unit disad");
             simpleBug(this.myHQ, false);
-        } else if(healthDisadvantage) {
+        } /*else if(healthDisadvantage) {
             // Retreat to center of allies
             rc.setIndicatorString(0, "retreating because health disadvantage");
             simpleBug(allyCentroid, false);
-        }
+        }*/
 
         if (lowestHealthAttackableSoldier != null) {
             // If we can attack, we do

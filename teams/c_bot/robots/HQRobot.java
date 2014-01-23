@@ -57,11 +57,11 @@ public class HQRobot extends BaseRobot {
         
         int mapSize = width*height;
         if (mapSize > 2500) {
-            strat = Strategy.DEFENSE_MACRO;
+            strat = Strategy.RUSH;
         } else if (mapSize <= 900) {
             strat = Strategy.RUSH;
         } else {
-            strat = Strategy.DEFENSE_MACRO;
+            strat = Strategy.RUSH;
         }
         
         if (Math.abs(this.curLoc.x - (width / 2)) < 5) {
@@ -130,7 +130,7 @@ public class HQRobot extends BaseRobot {
             if (currentPastrTarget != null) {
                 Command attackPastr = new Command(CommandType.ATTACK_PASTR, currentPastrTarget);
                 if (!trySpawnSquadMember(SWARM_SIZE, rallyPoint, attackPastr)){
-                    for (int i = 2; i < squadNumber; i ++) {
+                    for (int i = 2; i <= squadNumber; i ++) {
                         comms.sendSquadCommand(i, attackPastr);
                     }
                 }
