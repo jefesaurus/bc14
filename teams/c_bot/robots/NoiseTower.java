@@ -109,6 +109,7 @@ import c_bot.managers.InfoArray.BuildingType;
 import battlecode.common.Clock;
 import battlecode.common.GameActionException;
 import battlecode.common.MapLocation;
+import battlecode.common.Robot;
 import battlecode.common.RobotController;
 
 public class NoiseTower extends BaseRobot {
@@ -136,8 +137,19 @@ public class NoiseTower extends BaseRobot {
         setHerdingMethod(HerdingMethod.LINEAR);
     }
     
+    public void alertIfEnemySighted() throws GameActionException {
+        Robot[] enemies = rc.senseNearbyGameObjects(Robot.class, 10000, rc.getTeam().opponent());
+        if (enemies.length > 1) {
+            comms.soundAlarm();
+        } else {
+            comms.resetAlarm();
+        }
+    }
+    
     @Override
     public void run() throws GameActionException {
+        
+        alertIfEnemySighted();
 
         switch (this.method) {
         case RADIAL:
