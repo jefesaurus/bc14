@@ -435,7 +435,9 @@ public class SoldierRobot extends BaseRobot {
             // If we can attack, we do
             if(rc.isActive()){ 
                 rc.setIndicatorString(1, "attacking lowest health");
-
+                if (lowestHealthAttackableSoldier.health <= RobotType.SOLDIER.attackPower) {
+                    comms.updateKillCount();
+                }
                 rc.attackSquare(lowestHealthAttackableSoldier.location);
             } else {
                 rc.setIndicatorString(1, "would attack but not active");

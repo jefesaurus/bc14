@@ -38,11 +38,23 @@ public class InfoArrayManager {
     static final int P_PASTR_SCORE2 = P_PASTR_LOC2 + 1;
 
     static final int P_SEARCH_COORDINATES = P_PASTR_SCORE2 + 2;
+    
+    static final int KILL_COUNT = P_SEARCH_COORDINATES + 1;
+    
 
     public InfoArrayManager(RobotController rc) throws GameActionException {
         this.rc = rc;
     }
     
+    
+    public void updateKillCount() throws GameActionException {
+        int cur_kill_count = rc.readBroadcast(KILL_COUNT);
+        rc.broadcast(KILL_COUNT, ++cur_kill_count);
+    }
+    
+    public int readKillCount() throws GameActionException {
+        return rc.readBroadcast(KILL_COUNT);
+    }
     
     public MapLocation wait_P_PASTR_LOC_1() throws GameActionException {
         int msg = rc.readBroadcast(P_PASTR_LOC1);
