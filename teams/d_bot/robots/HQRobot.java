@@ -233,6 +233,20 @@ public class HQRobot extends BaseRobot {
                         for (int i = 2; i <= squadNumber; i ++) {
                             comms.sendSquadCommand(i, attackPastr);
                         }
+                        System.out.println("Detected pastr at: " + currentPastrTarget.toString());
+                    } else {
+                        MapLocation enemyCentroid;
+                        BattleFront existing = comms.getBattle();
+                        if (curRound - existing.roundNum < 5) {
+                            enemyCentroid = existing.enemyCentroid;
+                        } else {
+                            enemyCentroid = enemyHQ;
+                        }
+                        Command attackGeneral = new Command(CommandType.ATTACK_PASTR, enemyCentroid);
+                        trySpawnSquadMember(100, rallyPoint, attackGeneral);
+                        for (int i = 2; i <= squadNumber; i ++) {
+                            comms.sendSquadCommand(i, attackGeneral);
+                        }
                     }
                 }
             }
@@ -248,7 +262,7 @@ public class HQRobot extends BaseRobot {
             } else if (!isTowerAlive()) {
                 trySpawnTower();
             } else {
-                currentPastrTarget = getPastrTarget(currentPastrTarget);
+                
                 Command defPastr = new Command(CommandType.DEFEND_PASTR, bestPastrLoc);
                 if (currentPastrTarget != null) {
                     Command attackPastr = new Command(CommandType.ATTACK_PASTR, currentPastrTarget);

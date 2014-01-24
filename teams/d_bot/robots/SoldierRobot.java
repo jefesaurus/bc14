@@ -284,7 +284,7 @@ public class SoldierRobot extends BaseRobot {
      * BATTLE MICRO
      */
 
-    public void offensiveMicro(Robot[] nearbyEnemies, MapLocation inPastrLoc) throws GameActionException {
+    public void offensiveMicro(Robot[] nearbyEnemies, MapLocation pointToAttack) throws GameActionException {
         // Enemy unittype counters
         boolean enemyHQInSight = false;
         boolean enemyHQInRange = false;
@@ -304,7 +304,7 @@ public class SoldierRobot extends BaseRobot {
         // Tally up counters & metrics
         RobotInfo lowestHealthAttackableSoldier = null;
         double lowestSoldierHealth = Integer.MAX_VALUE;
-        MapLocation pastrLoc = inPastrLoc;
+        MapLocation pastrLoc = null;
         MapLocation towerLoc;
         for (Robot b : nearbyEnemies) {
             RobotInfo info = rc.senseRobotInfo(b);
@@ -348,7 +348,7 @@ public class SoldierRobot extends BaseRobot {
             }
         }
 
-        MapLocation enemyCentroid;
+        MapLocation enemyCentroid = null;
 
         if (numEnemySoldiers > 0) {
             // Finalize the averaged metrics
@@ -357,12 +357,9 @@ public class SoldierRobot extends BaseRobot {
             if (curRound - existing.roundNum > 3 || existing.numEnemies < numEnemySoldiers) {
                 comms.setBattle(new BattleFront(curRound, numEnemySoldiers, enemyCentroid));
             }
-        } else if (pastrLoc == null) {
-            BattleFront existing = comms.getBattle();
-            enemyCentroid = existing.enemyCentroid;
-            rc.setIndicatorString(0, "Pulled in enemy centroid");
-        } else {
-            enemyCentroid = pastrLoc;
+        } else if (pastrLoc == null){
+            simpleBug(pointToAttack, false);
+            return;
         }
 
 
