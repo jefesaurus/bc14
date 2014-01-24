@@ -1,16 +1,16 @@
-package d_bot.robots;
+package c_bot.robots;
 
-import d_bot.Constants;
-import d_bot.managers.InfoArray.BattleFront;
-import d_bot.managers.InfoArray.BuildingInfo;
-import d_bot.managers.InfoArray.BuildingStatus;
-import d_bot.managers.InfoArray.BuildingType;
-import d_bot.managers.InfoArray.Command;
-import d_bot.navigation.NavigationMode;
-import d_bot.robots.SoldierRobot.ConstructionState;
-import d_bot.util.CowGrowth;
-import d_bot.util.Util;
-import d_bot.util.VectorFunctions;
+import c_bot.Constants;
+import c_bot.managers.InfoArray.BattleFront;
+import c_bot.managers.InfoArray.BuildingInfo;
+import c_bot.managers.InfoArray.BuildingStatus;
+import c_bot.managers.InfoArray.BuildingType;
+import c_bot.managers.InfoArray.Command;
+import c_bot.navigation.NavigationMode;
+import c_bot.robots.SoldierRobot.ConstructionState;
+import c_bot.util.CowGrowth;
+import c_bot.util.Util;
+import c_bot.util.VectorFunctions;
 import battlecode.common.Clock;
 import battlecode.common.Direction;
 import battlecode.common.GameActionException;
@@ -36,7 +36,7 @@ public class SoldierRobot extends BaseRobot {
         MOVE_TO_COARSE_LOC, 
         MOVE_TO_EXACT_LOC
     }
- 
+
     static int pathCreatedRound = -1;
     int squadNum = 0;
     Command currentCommand;
@@ -51,9 +51,7 @@ public class SoldierRobot extends BaseRobot {
     public MapLocation pastrToDefend = null;
     public MapLocation pointInFrontOfPastrToDefend = null;
    
-    //Number of extra units we need over the opponent to force a battle
-    public int ADVANTAGE_THRESHOLD = 2;
-    
+
     public SoldierRobot(RobotController rc) throws GameActionException {
         super(rc);          
         squadNum = comms.getNewSpawnSquad();
@@ -291,8 +289,7 @@ public class SoldierRobot extends BaseRobot {
 
         int numEnemySoldiers = 0;
 
-        int squaredDistanceToClosestEnemy = Integer.MAX_VALUE;
-        RobotInfo closestEnemy = null;
+
         // Useful metrics
         double enemyNumHits = 0;
 
@@ -310,10 +307,6 @@ public class SoldierRobot extends BaseRobot {
             RobotInfo info = rc.senseRobotInfo(b);
             switch(info.type) {
             case SOLDIER:
-                if (squaredDistanceToClosestEnemy < this.curLoc.distanceSquaredTo(info.location)) {
-                  closestEnemy = info;
-                  squaredDistanceToClosestEnemy = this.curLoc.distanceSquaredTo(info.location);
-                }
                 numEnemySoldiers++;
                 enemyCentroidX += info.location.x;
                 enemyCentroidY += info.location.y;
@@ -445,7 +438,7 @@ public class SoldierRobot extends BaseRobot {
             }
 
             // TODO tune what we consider a good enough advantage
-        } else if (unitDisadvantage > -ADVANTAGE_THRESHOLD && unitDisadvantage < 0 && !enemyHQInSight) {
+        } else if (unitDisadvantage < 0 && !enemyHQInSight) {
             //Strong enough support, lets advance            
             if(pastrLoc != null) {
                 if (rc.isActive() && rc.canAttackSquare(pastrLoc)) {
@@ -457,30 +450,10 @@ public class SoldierRobot extends BaseRobot {
                 }
             } else {
                 rc.setIndicatorString(0, "Advancing to enemy");
-                if (closestEnemy != null) {
-                    if (roundsUntilInRange(closestEnemy) <= 3) {
-                //if (squaredDistanceToClosestEnemy < 13) {
-                        rc.setIndicatorString(0, "wait for enemey to come attack us");
-                    } else {
-                        simpleBug(enemyCentroid, false);
-                    }
-                }
+
+                simpleBug(enemyCentroid, false);
             }
 
-        } else if (unitDisadvantage <= -ADVANTAGE_THRESHOLD && !enemyHQInSight) {
-            if(pastrLoc != null) {
-                if (rc.isActive() && rc.canAttackSquare(pastrLoc)) {
-                    rc.attackSquare(pastrLoc);
-                } else {
-                    rc.setIndicatorString(0, "Advancing to enemy pastr");
-
-                    simpleBug(pastrLoc, false);
-                }
-            } else {
-                rc.setIndicatorString(0, "Advancing to enemy");
-                simpleBug(enemyCentroid, false);    
-            }
-            
         } else {
             rc.setIndicatorString(1, "Yielding");
 
@@ -540,7 +513,7 @@ public class SoldierRobot extends BaseRobot {
                 } else {
                     if (curLoc.distanceSquaredTo(pointInFrontOfPastrToDefend) > 25) {
                         rc.setIndicatorString(1, "Bugging: Because no one to attack and not in range of base.");
-                        simpleBug(pointInFrontOfPastrToDefend, false);
+                        simpleBug(pointInFrontOfPastrToDefend, true);
                     } else {
                         return;
                     }
@@ -556,7 +529,7 @@ public class SoldierRobot extends BaseRobot {
     
     public int roundsUntilInRange(RobotInfo target) {
         return (int)(target.actionDelay + 1
-                + ((int)Math.sqrt(target.location.distanceSquaredTo(this.curLoc))
-                        - (int)Math.sqrt(RobotType.SOLDIER.attackRadiusMaxSquared))*2);
+                + (int)Math.sqrt(target.location.distanceSquaredTo(this.curLoc) 
+                        - RobotType.SOLDIER.attackRadiusMaxSquared));
     }
 }

@@ -1,4 +1,4 @@
-package d_bot.robots;
+package c_bot.robots;
 
 /**
  * int x1 = rc.getLocation().x;
@@ -103,9 +103,9 @@ package d_bot.robots;
             }
  */
 
-import d_bot.managers.InfoArray.BuildingInfo;
-import d_bot.managers.InfoArray.BuildingStatus;
-import d_bot.managers.InfoArray.BuildingType;
+import c_bot.managers.InfoArray.BuildingInfo;
+import c_bot.managers.InfoArray.BuildingStatus;
+import c_bot.managers.InfoArray.BuildingType;
 import battlecode.common.Clock;
 import battlecode.common.GameActionException;
 import battlecode.common.MapLocation;

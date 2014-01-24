@@ -1,7 +1,7 @@
-package d_bot.managers.InfoArray;
+package c_bot.managers.InfoArray;
 
-import d_bot.managers.InfoArray.Command;
-import d_bot.util.VectorFunctions;
+import c_bot.managers.InfoArray.Command;
+import c_bot.util.VectorFunctions;
 import battlecode.common.GameActionException;
 import battlecode.common.MapLocation;
 import battlecode.common.RobotController;
@@ -16,7 +16,7 @@ import battlecode.common.RobotController;
 
 public class InfoArrayManager {
     RobotController rc;
-    static final int NUM_SQUADS = 100;
+    static final int NUM_SQUADS = 25;
     
     
     static final int OUR_HQ_LOC_SLOT = 0;
@@ -188,8 +188,7 @@ public class InfoArrayManager {
             firstSlot = TOWER_STATUS_SLOTS;
         default:
             break;
-        }
-        for (int i = 0; i < packets.length; i ++) {
+        }        for (int i = 0; i < packets.length; i ++) {
             rc.broadcast(firstSlot + i, packets[i]);
         }
     }
