@@ -79,7 +79,7 @@ public class SoldierRobot extends BaseRobot {
                     offensiveMicro(nearbyEnemies, null);
                 }
             } else {
-                simpleBug(destination, false);
+                simpleBug(destination, false, false);
             }
             break;
 
@@ -89,7 +89,7 @@ public class SoldierRobot extends BaseRobot {
                     offensiveMicro(nearbyEnemies, destination);
                 }
             } else {
-                simpleBug(destination, false);
+                simpleBug(destination, false, false);
             }
             break;
 
@@ -118,7 +118,7 @@ public class SoldierRobot extends BaseRobot {
                 if (pointInFrontOfPastrToDefend == null) {
                     pointInFrontOfPastrToDefend = destination;
                 }
-                simpleBug(pointInFrontOfPastrToDefend, false);
+                simpleBug(pointInFrontOfPastrToDefend, false, false);
             } 
             
             break;
@@ -152,7 +152,7 @@ public class SoldierRobot extends BaseRobot {
 
                 //System.out.println("coarse loc");
                 if (this.curLoc.distanceSquaredTo(nav.getDestination()) > FUZZY_BUILDING_PLACEMENT) {
-                    Direction toMove = nav.navigateToDestination();
+                    Direction toMove = nav.navigateToDestination(false);
                     if (toMove != null) {
                         simpleMove(toMove, false);
                     }
@@ -185,7 +185,7 @@ public class SoldierRobot extends BaseRobot {
             case MOVE_TO_COARSE_LOC:
                 rc.setIndicatorString(1, "Finding coarse location");
                 if (this.curLoc.distanceSquaredTo(possiblePastrLoc) > FUZZY_BUILDING_PLACEMENT) {
-                    simpleBug(nav.getDestination(), false);
+                    simpleBug(nav.getDestination(), false, false);
                     break;
                 } else {
                     this.cstate = ConstructionState.MOVE_TO_EXACT_LOC;
@@ -200,7 +200,7 @@ public class SoldierRobot extends BaseRobot {
                 if (!rc.getLocation().equals(adjacent)) {
                     rc.setIndicatorString(2, "Not adjacent");
 
-                    simpleBug(adjacent, false);
+                    simpleBug(adjacent, false, false);
                 } else {
                     rc.setIndicatorString(2, "is adjacent");
                     if (rc.isActive()) {
@@ -225,9 +225,9 @@ public class SoldierRobot extends BaseRobot {
     }
 
 
-    public void simpleBug(MapLocation destination, boolean sneak) throws GameActionException {
+    public void simpleBug(MapLocation destination, boolean sneak, boolean EnterHQAttackZone) throws GameActionException {
         nav.setDestination(destination);
-        Direction toMove = nav.navigateToDestination();
+        Direction toMove = nav.navigateToDestination(EnterHQAttackZone);
         if (toMove != null) {
             simpleMove(toMove, sneak);
         }
@@ -357,13 +357,13 @@ public class SoldierRobot extends BaseRobot {
                 comms.setBattle(new BattleFront(curRound, numEnemySoldiers, enemyCentroid));
             }
         } else if (pastrLoc == null){
-            simpleBug(pointToAttack, false);
+            simpleBug(pointToAttack, false, false);
             return;
         } else {
             if (rc.isActive() && rc.canAttackSquare(pastrLoc)) {
                 rc.attackSquare(pastrLoc);
             } else {
-                simpleBug(pastrLoc, false);
+                simpleBug(pastrLoc, false, false);
             }
             return;
         }
@@ -420,17 +420,17 @@ public class SoldierRobot extends BaseRobot {
                 if (rc.canAttackSquare(pastrLoc)) {
                     rc.attackSquare(pastrLoc);
                 } else {
-                    simpleBug(pastrLoc, false);
+                    simpleBug(pastrLoc, false, true);
                 }    
             } else {
-                simpleBug(this.myHQ, false);
+                simpleBug(this.myHQ, false, false);
             }
 
             // If we are in HQ range but there is no pastr, or we have a unit disdvantage, we need to bounce
         } else if(enemyHQInRange || unitDisadvantage > 0) {
             // Retreat away or home
             rc.setIndicatorString(1, "retreating because enemy hq or unit disad");
-            simpleBug(this.myHQ, false);
+            simpleBug(this.myHQ, false, false);
         } /*else if(healthDisadvantage) {
             // Retreat to center of allies
             rc.setIndicatorString(0, "retreating because health disadvantage");
@@ -458,7 +458,7 @@ public class SoldierRobot extends BaseRobot {
                 } else {
                     rc.setIndicatorString(0, "Advancing to enemy pastr");
 
-                    simpleBug(pastrLoc, false);
+                    simpleBug(pastrLoc, false, false);
                 }
             } else {
                 rc.setIndicatorString(0, "Advancing to enemy");
@@ -467,7 +467,7 @@ public class SoldierRobot extends BaseRobot {
                 //if (squaredDistanceToClosestEnemy < 13) {
                         rc.setIndicatorString(0, "wait for enemey to come attack us");
                     } else {
-                        simpleBug(enemyCentroid, false);
+                        simpleBug(enemyCentroid, false, false);
                     }
                 }
             }
@@ -479,11 +479,11 @@ public class SoldierRobot extends BaseRobot {
                 } else {
                     rc.setIndicatorString(0, "Advancing to enemy pastr");
 
-                    simpleBug(pastrLoc, false);
+                    simpleBug(pastrLoc, false, false);
                 }
             } else {
                 rc.setIndicatorString(0, "Advancing to enemy");
-                simpleBug(enemyCentroid, false);    
+                simpleBug(enemyCentroid, false, false);    
             }
             
         } else {
@@ -545,7 +545,7 @@ public class SoldierRobot extends BaseRobot {
                 } else {
                     if (curLoc.distanceSquaredTo(pointInFrontOfPastrToDefend) > 25) {
                         rc.setIndicatorString(1, "Bugging: Because no one to attack and not in range of base.");
-                        simpleBug(pointInFrontOfPastrToDefend, false);
+                        simpleBug(pointInFrontOfPastrToDefend, false, false);
                     } else {
                         return;
                     }

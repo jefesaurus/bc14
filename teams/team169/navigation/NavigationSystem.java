@@ -116,7 +116,7 @@ public class NavigationSystem {
      * may return a direction that moves towards another robot. <br>
      * @return null, or one of the 8 valid directions.
      */
-    public Direction navigateToDestination() {
+    public Direction navigateToDestination(boolean EnterHQAttackZone) {
         if(destination==null || br.curLoc.equals(destination)) 
             return null; 
         
@@ -133,7 +133,7 @@ public class NavigationSystem {
                 dir = navigateGreedy(destination);
             break;
         case BUG:
-            dir = navigateBug();
+            dir = navigateBug(EnterHQAttackZone);
 //          if(movesOnSameTarget % (3*expectedMovesToReachTarget) == 0) {
 //              normalBug.reset();
 //          }
@@ -244,20 +244,33 @@ public class NavigationSystem {
         return zeroLoc.directionTo(zeroLoc.add(dx, dy));
     }
     /** This is private because it needs the state of the navigator to work. */
-    private Direction navigateBug() {
+    public Direction navigateBug(boolean EnterHQAttackZone) {
         normalBug.edgeXMin = 0;
         normalBug.edgeXMax = rc.getMapWidth()-1;
         normalBug.edgeYMin = 0;
         normalBug.edgeYMax = rc.getMapHeight()-1;
         boolean movable[] = new boolean[8];
-        for(int i=0; i<8; i++) {
-            Direction dir = Direction.values()[i];
-            TerrainTile tt = rc.senseTerrainTile(
-                    br.curLoc.add(dir));
-            if(bugTurnsBlocked < 3)
-                movable[i] = (tt==null) ? rc.canMove(dir) : (tt==TerrainTile.NORMAL || tt==TerrainTile.ROAD);
-            else
-                movable[i] = rc.canMove(dir);
+        if (EnterHQAttackZone) {
+            for(int i=0; i<8; i++) {
+                Direction dir = Direction.values()[i];
+                TerrainTile tt = rc.senseTerrainTile(
+                        br.curLoc.add(dir));
+                if(bugTurnsBlocked < 3)
+                    movable[i] = (tt==null) ? rc.canMove(dir) : (tt==TerrainTile.NORMAL || tt==TerrainTile.ROAD);
+                else
+                    movable[i] = rc.canMove(dir);
+            }
+        } else {
+            for(int i=0; i<8; i++) {
+                Direction dir = Direction.values()[i];
+                MapLocation trialLoc =  br.curLoc.add(dir);
+                TerrainTile tt = rc.senseTerrainTile(
+                        trialLoc);
+                if(bugTurnsBlocked < 3)
+                    movable[i] = ((tt==null) ? rc.canMove(dir) : (tt==TerrainTile.NORMAL || tt==TerrainTile.ROAD)) && (trialLoc.distanceSquaredTo(br.enemyHQ) > RobotType.HQ.attackRadiusMaxSquared);
+                else
+                    movable[i] = rc.canMove(dir) && ((trialLoc.distanceSquaredTo(br.enemyHQ) > RobotType.HQ.attackRadiusMaxSquared));
+            }
         }
         
         int[] d = normalBug.computeMove(
