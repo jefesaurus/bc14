@@ -323,7 +323,6 @@ public class HQRobot extends BaseRobot {
                         for (int i = 2; i <= squadNumber; i ++) {
                             comms.sendSquadCommand(i, attackPastr);
                         }
-                        System.out.println("Detected pastr at: " + currentPastrTarget.toString());
                     } else {
                         MapLocation enemyCentroid;
                         BattleFront existing = comms.getBattle();

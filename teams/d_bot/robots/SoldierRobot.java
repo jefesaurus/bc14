@@ -279,7 +279,6 @@ public class SoldierRobot extends BaseRobot {
     } 
 
 
-
     /*
      * BATTLE MICRO
      */
@@ -359,6 +358,13 @@ public class SoldierRobot extends BaseRobot {
             }
         } else if (pastrLoc == null){
             simpleBug(pointToAttack, false);
+            return;
+        } else {
+            if (rc.isActive() && rc.canAttackSquare(pastrLoc)) {
+                rc.attackSquare(pastrLoc);
+            } else {
+                simpleBug(pastrLoc, false);
+            }
             return;
         }
 
