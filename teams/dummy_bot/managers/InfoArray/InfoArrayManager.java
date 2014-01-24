@@ -16,7 +16,7 @@ import battlecode.common.RobotController;
 
 public class InfoArrayManager {
     RobotController rc;
-    static final int NUM_SQUADS = 100;
+    static final int NUM_SQUADS = 25;
     
     
     static final int OUR_HQ_LOC_SLOT = 0;

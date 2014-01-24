@@ -58,11 +58,11 @@ public class HQRobot extends BaseRobot {
         
         int mapSize = width*height;
         if (mapSize > 2500) {
-            strat = Strategy.RUSH;
+            strat = Strategy.DEFENSE_MACRO;
         } else if (mapSize <= 900) {
             strat = Strategy.RUSH;
         } else {
-            strat = Strategy.RUSH;
+            strat = Strategy.DEFENSE_MACRO;
         }
         
         if (Math.abs(this.curLoc.x - (width / 2)) < 5) {
