@@ -129,6 +129,9 @@ public class HQRobot extends BaseRobot {
             } else {
                 WINNING = false;
             }
+            
+            boolean PASTR_UNDER_ATTACK = comms.checkPastrAlarm();
+            
             //System.out.println("we are winning: " + WINNING);
             if (!WINNING) {
                 if (currentPastrTarget != null) {
@@ -154,6 +157,12 @@ public class HQRobot extends BaseRobot {
                     }
                 }
             } else {
+                if (PASTR_UNDER_ATTACK) {
+                    Command attackEnemiesAtOurPastr = new Command(CommandType.ATTACK_POINT, bestPastrLoc);
+                    for (int i = 2; i <= squadNumber; i ++) {
+                        comms.sendSquadCommand(i, attackEnemiesAtOurPastr);
+                    }
+                }
                 if (bestPastrLoc == null) {
                     if (!trySpawnPastr()) {
                         return;

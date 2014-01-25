@@ -106,10 +106,13 @@ package team169.robots;
 import team169.managers.InfoArray.BuildingInfo;
 import team169.managers.InfoArray.BuildingStatus;
 import team169.managers.InfoArray.BuildingType;
+import team169.managers.InfoArray.PastrAlarm;
 import battlecode.common.Clock;
 import battlecode.common.GameActionException;
 import battlecode.common.MapLocation;
+import battlecode.common.Robot;
 import battlecode.common.RobotController;
+import battlecode.common.RobotType;
 
 public class NoiseTower extends BaseRobot {
     
@@ -122,6 +125,7 @@ public class NoiseTower extends BaseRobot {
         PATHING
     }
     
+    public PastrAlarm alarm;
     public HerdingMethod method;
     public int rangeSquared;
     public int range;
@@ -134,10 +138,21 @@ public class NoiseTower extends BaseRobot {
         rangeSquared = rc.getType().attackRadiusMaxSquared;
         range = (int) Math.sqrt(rangeSquared);
         setHerdingMethod(HerdingMethod.LINEAR);
+        alarm = new PastrAlarm(0, Clock.getRoundNum());
+    }
+    
+    public void alertIfEnemySighted() throws GameActionException {
+        Robot[] nearbyEnemies = rc.senseNearbyGameObjects(Robot.class, 100000, rc.getTeam().opponent());
+        if (nearbyEnemies.length > 0) {
+            alarm = new PastrAlarm(1, Clock.getRoundNum());
+        }
+        comms.updatePastrAlarm(RobotType.NOISETOWER, alarm);
     }
     
     @Override
     public void run() throws GameActionException {
+        
+        alertIfEnemySighted();
 
         switch (this.method) {
         case RADIAL:

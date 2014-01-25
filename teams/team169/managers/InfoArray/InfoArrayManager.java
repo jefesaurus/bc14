@@ -2,9 +2,11 @@ package team169.managers.InfoArray;
 
 import team169.managers.InfoArray.Command;
 import team169.util.VectorFunctions;
+import battlecode.common.Clock;
 import battlecode.common.GameActionException;
 import battlecode.common.MapLocation;
 import battlecode.common.RobotController;
+import battlecode.common.RobotType;
 
 /*
  * Organization:
@@ -15,6 +17,9 @@ import battlecode.common.RobotController;
  */
 
 public class InfoArrayManager {
+    
+    public final int ALARM_FRESHNESS = 8;
+    
     RobotController rc;
     static final int NUM_SQUADS = 100;
     
@@ -40,12 +45,43 @@ public class InfoArrayManager {
     static final int P_SEARCH_COORDINATES = P_PASTR_SCORE2 + 2;
     
     static final int KILL_COUNT = P_SEARCH_COORDINATES + 1;
-    
+    static final int PASTR_ALARM = KILL_COUNT + 1;
+    static final int TOWER_ALARM = PASTR_ALARM + 1;
 
     public InfoArrayManager(RobotController rc) throws GameActionException {
         this.rc = rc;
     }
     
+    public void updatePastrAlarm(RobotType type, PastrAlarm info) throws GameActionException {
+        int[] msg = info.toPacked();
+        switch (type) {
+        case PASTR:
+            rc.broadcast(PASTR_ALARM, msg[0] * 10 + msg[1]);
+            break;
+        case NOISETOWER:
+            rc.broadcast(TOWER_ALARM, msg[0] * 10 + msg[1]);
+            break;    
+        default:
+            System.out.println("Invalid type for updatePastrAlarm");    
+        } 
+    }
+    
+    //returns true if our pastr is under attack, false otherwise
+    public boolean checkPastrAlarm() throws GameActionException {
+        
+        int msg = rc.readBroadcast(TOWER_ALARM);
+        if (msg % 10 == 1 && Clock.getRoundNum() - (msg / 10) < ALARM_FRESHNESS) {
+            return true;
+        }
+        
+        msg = rc.readBroadcast(PASTR_ALARM);
+        if (msg % 10 == 1 && Clock.getRoundNum() - (msg / 10) < ALARM_FRESHNESS) {
+            return true;
+        }
+        
+        return false;
+        
+    }
     
     public void updateKillCount() throws GameActionException {
         int cur_kill_count = rc.readBroadcast(KILL_COUNT);
