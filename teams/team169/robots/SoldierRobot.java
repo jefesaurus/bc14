@@ -51,8 +51,11 @@ public class SoldierRobot extends BaseRobot {
     public MapLocation pastrToDefend = null;
     public MapLocation pointInFrontOfPastrToDefend = null;
    
+    //Battle Constants
     //Number of extra units we need over the opponent to force a battle
     public int ADVANTAGE_THRESHOLD = 2;
+    //Number of units the enemy can have over us and still not retreat
+    public int DEFENDERS_ADVANTAGE = 2;
     
     public SoldierRobot(RobotController rc) throws GameActionException {
         super(rc);          
@@ -427,7 +430,7 @@ public class SoldierRobot extends BaseRobot {
             }
 
             // If we are in HQ range but there is no pastr, or we have a unit disdvantage, we need to bounce
-        } else if(enemyHQInRange || unitDisadvantage > 0) {
+        } else if(enemyHQInRange || unitDisadvantage > DEFENDERS_ADVANTAGE) {
             // Retreat away or home
             rc.setIndicatorString(1, "retreating because enemy hq or unit disad");
             simpleBug(this.myHQ, false, false);
