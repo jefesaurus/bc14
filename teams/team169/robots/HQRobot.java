@@ -43,11 +43,6 @@ public class HQRobot extends BaseRobot {
     // Our favored pastr location
     MapLocation bestPastrLoc = null;
 
-    public enum Strategy {
-        GREEDY, SAFE_MACRO, DEFENSE_MACRO, RUSH, OFFENSE_MACRO, ADAPTIVE
-    }
-    
-    Strategy strat;
     int NumUnitsProduced = 0;
 
     public HQRobot(RobotController rc) throws GameActionException {
@@ -58,15 +53,6 @@ public class HQRobot extends BaseRobot {
         
         int width = rc.getMapWidth();
         int height = rc.getMapHeight();
-        
-        int mapSize = width*height;
-        if (mapSize > 2500) {
-            strat = Strategy.ADAPTIVE;
-        } else if (mapSize <= 900) {
-            strat = Strategy.ADAPTIVE;
-        } else {
-            strat = Strategy.ADAPTIVE;
-        }
         
         if (Math.abs(this.curLoc.x - (width / 2)) < 5) {
             if (this.curLoc.y < (height / 2)) {
@@ -117,11 +103,75 @@ public class HQRobot extends BaseRobot {
                     enemyCentroidY += info.location.y;
                 }
             }
-            
+            spawnDir = new MapLocation(enemyCentroidX / numEnemySoldiers, enemyCentroidY / numEnemySoldiers).directionTo(this.myHQ);
         }
-        switch(strat) {
-        case ADAPTIVE:
-           /** if (bestPastrLoc == null) {
+
+       /** if (bestPastrLoc == null) {
+            if (!trySpawnPastr()) {
+                return;
+            }
+            calcBestPastrLocation();
+        }
+        if (!isPastrAlive()) {
+            trySpawnPastr();
+        } else if (!isTowerAlive()) {
+            trySpawnTower();
+        } else {**/
+        currentPastrTarget = getPastrTarget(currentPastrTarget);
+        int ourTotalDeaths = NumUnitsProduced - rc.senseRobotCount();
+        //System.out.println("our deaths: " + ourTotalDeaths + " round num: " + Clock.getRoundNum());
+        //System.out.println("their deaths: " + comms.readKillCount() + " round num: " + Clock.getRoundNum());
+
+        if (isPastrAlive()) {
+            ourTotalDeaths -= 1;
+        }
+        if (isTowerAlive()) {
+            ourTotalDeaths -= 1;
+        }
+        
+        if (ourTotalDeaths + WINNING_ADVANTAGE < comms.readKillCount()) {
+            WINNING = true;
+        } else {
+            WINNING = false;
+        }
+        
+        
+        boolean PASTR_UNDER_ATTACK = comms.checkPastrAlarm();
+        
+        //System.out.println("we are winning: " + WINNING);
+        if (!WINNING) {
+            if (currentPastrTarget != null) {
+                Command attackPastr = new Command(CommandType.ATTACK_PASTR, currentPastrTarget);
+
+                trySpawnSquadMember(1000000, rallyPoint, attackPastr, spawnDir);
+                for (int i = 2; i <= squadNumber; i ++) {
+                    comms.sendSquadCommand(i, attackPastr);
+                }
+                System.out.println("Detected pastr at: " + currentPastrTarget.toString());
+            } else {
+                MapLocation enemyCentroid;
+                BattleFront existing = comms.getBattle();
+                if (curRound - existing.roundNum < 5) {
+                    enemyCentroid = existing.enemyCentroid;
+                } else {
+                    enemyCentroid = enemyHQ;
+                }
+                Command attackGeneral = new Command(CommandType.ATTACK_PASTR, enemyCentroid);
+                trySpawnSquadMember(10000, rallyPoint, attackGeneral, spawnDir);
+                for (int i = 2; i <= squadNumber; i ++) {
+                    comms.sendSquadCommand(i, attackGeneral);
+                }
+            }
+        } else {
+
+            if (PASTR_UNDER_ATTACK) {
+                Command attackEnemiesAtOurPastr = new Command(CommandType.ATTACK_POINT, bestPastrLoc);
+                for (int i = 2; i <= squadNumber; i ++) {
+                    comms.sendSquadCommand(i, attackEnemiesAtOurPastr);
+                }
+            }
+            if (bestPastrLoc == null) {
+                System.out.println("We're Winning! " + Clock.getRoundNum());
                 if (!trySpawnPastr()) {
                     return;
                 }
@@ -131,277 +181,29 @@ public class HQRobot extends BaseRobot {
                 trySpawnPastr();
             } else if (!isTowerAlive()) {
                 trySpawnTower();
-            } else {**/
-            currentPastrTarget = getPastrTarget(currentPastrTarget);
-            int ourTotalDeaths = NumUnitsProduced - rc.senseRobotCount();
-            //System.out.println("our deaths: " + ourTotalDeaths + " round num: " + Clock.getRoundNum());
-            //System.out.println("their deaths: " + comms.readKillCount() + " round num: " + Clock.getRoundNum());
-
-            if (isPastrAlive()) {
-                ourTotalDeaths -= 1;
             }
-            if (isTowerAlive()) {
-                ourTotalDeaths -= 1;
-            }
-            
-            if (ourTotalDeaths + WINNING_ADVANTAGE < comms.readKillCount()) {
-                WINNING = true;
-            } else {
-                WINNING = false;
-            }
-            
-            
-            boolean PASTR_UNDER_ATTACK = comms.checkPastrAlarm();
-            
-            //System.out.println("we are winning: " + WINNING);
-            if (!WINNING) {
-                if (currentPastrTarget != null) {
-                    Command attackPastr = new Command(CommandType.ATTACK_PASTR, currentPastrTarget);
-    
-                    trySpawnSquadMember(1000000, rallyPoint, attackPastr, spawnDir);
-                    for (int i = 2; i <= squadNumber; i ++) {
-                        comms.sendSquadCommand(i, attackPastr);
-                    }
-                    System.out.println("Detected pastr at: " + currentPastrTarget.toString());
-                } else {
-                    MapLocation enemyCentroid;
-                    BattleFront existing = comms.getBattle();
-                    if (curRound - existing.roundNum < 5) {
-                        enemyCentroid = existing.enemyCentroid;
-                    } else {
-                        enemyCentroid = enemyHQ;
-                    }
-                    Command attackGeneral = new Command(CommandType.ATTACK_PASTR, enemyCentroid);
-                    trySpawnSquadMember(10000, rallyPoint, attackGeneral, spawnDir);
-                    for (int i = 2; i <= squadNumber; i ++) {
-                        comms.sendSquadCommand(i, attackGeneral);
-                    }
-                }
-            } else {
-
-                if (PASTR_UNDER_ATTACK) {
-                    Command attackEnemiesAtOurPastr = new Command(CommandType.ATTACK_POINT, bestPastrLoc);
-                    for (int i = 2; i <= squadNumber; i ++) {
-                        comms.sendSquadCommand(i, attackEnemiesAtOurPastr);
-                    }
-                }
-                if (bestPastrLoc == null) {
-                    System.out.println("We're Winning! " + Clock.getRoundNum());
-                    if (!trySpawnPastr()) {
-                        return;
-                    }
-                    calcBestPastrLocation();
-                }
-                if (!isPastrAlive()) {
-                    trySpawnPastr();
-                } else if (!isTowerAlive()) {
-                    trySpawnTower();
-                }
-                if (currentPastrTarget != null) {
-                    Command attackPastr = new Command(CommandType.ATTACK_PASTR, currentPastrTarget);
-    
-                    trySpawnSquadMember(1000000, rallyPoint, attackPastr, spawnDir);
-                    for (int i = 2; i <= squadNumber; i ++) {
-                        comms.sendSquadCommand(i, attackPastr);
-                    }
-                    System.out.println("Detected pastr at: " + currentPastrTarget.toString());
-                } else {
-                    MapLocation enemyCentroid;
-                    BattleFront existing = comms.getBattle();
-                    if (curRound - existing.roundNum < 5) {
-                        enemyCentroid = existing.enemyCentroid;
-                    } else {
-                        enemyCentroid = enemyHQ;
-                    }
-                    Command attackGeneral = new Command(CommandType.ATTACK_PASTR, enemyCentroid);
-                    trySpawnSquadMember(10000, rallyPoint, attackGeneral, spawnDir);
-                    for (int i = 2; i <= squadNumber; i ++) {
-                        comms.sendSquadCommand(i, attackGeneral);
-                    }
-                }
-            }
-            break;
-            
-            
-            
-        case GREEDY:
-            if (bestPastrLoc == null) {
-                trySpawnPastr();
-                calcBestPastrLocation();
-            }
-            if (!isPastrAlive()) {
-                trySpawnPastr();
-            } else if (!isTowerAlive()) {
-                trySpawnTower();
-            } else {
-                currentPastrTarget = getPastrTarget(currentPastrTarget);
-
-                if (currentPastrTarget != null) {
-                    Command attackPastr = new Command(CommandType.ATTACK_PASTR, currentPastrTarget);
-                    if (!trySpawnSquadMember(SWARM_SIZE, rallyPoint, attackPastr)){
-                        for (int i = 2; i < squadNumber; i ++) {
-                            comms.sendSquadCommand(i, attackPastr);
-                        }
-                    }
-                } else {
-                    trySpawnSquadMember(SWARM_SIZE, rallyPoint, new Command(CommandType.RALLY_POINT, rallyPoint));
-                }
-            }
-            break;
-            
-        case RUSH:
-            currentPastrTarget = getPastrTarget(currentPastrTarget);
             if (currentPastrTarget != null) {
                 Command attackPastr = new Command(CommandType.ATTACK_PASTR, currentPastrTarget);
-                if (!trySpawnSquadMember(SWARM_SIZE, rallyPoint, attackPastr)){
-                    for (int i = 2; i <= squadNumber; i ++) {
-                        comms.sendSquadCommand(i, attackPastr);
-                    }
-                }
-            } else if (squadNumber < 4) {
-                if (!trySpawnSquadMember(SWARM_SIZE, rallyPoint, new Command(CommandType.RALLY_POINT, rallyPoint))) {
-                    BattleFront front = comms.getBattle();
-                    if (front.enemyCentroid.x > 0) {
-                        for (int i = 2; i < squadNumber; i ++) {
-                            comms.sendSquadCommand(i, new Command(CommandType.ATTACK_POINT, front.enemyCentroid));
-                        }
-                    }
-                }
-            } else {
-                if (!trySpawnSquadMember(1, rallyPoint, new Command(CommandType.RALLY_POINT, rallyPoint))) {
-                    BattleFront front = comms.getBattle();
-                    if (front.enemyCentroid.x > 0) {
-                        for (int i = 2; i < squadNumber; i ++) {
-                            comms.sendSquadCommand(i, new Command(CommandType.ATTACK_POINT, front.enemyCentroid));
-                        }
-                    }
-                }
-            }
-            break;
-        case SAFE_MACRO:
-            if (!safeMacroInitDone) {
-                if (NumUnitsProduced < 6) {
-                    trySpawnSquadMember(6, rallyPoint, new Command(CommandType.RALLY_POINT, rallyPoint));
-                } else {
-                    currentPastrTarget = getPastrTarget(currentPastrTarget);
-                    if (currentPastrTarget != null) {
-                        Command attackPastr = new Command(CommandType.ATTACK_PASTR, currentPastrTarget);
-                        for (int i = 2; i < squadNumber; i ++) {
-                            comms.sendSquadCommand(i, attackPastr);
-                        }
-                    }
-                    safeMacroInitDone = true;
-                }
-            } else {
-                
-                if (bestPastrLoc == null) {
-                    while (!rc.isActive()) {
-                        rc.yield();
-                    }
-                    trySpawnPastr();
-                    calcBestPastrLocation();
 
+                trySpawnSquadMember(1000000, rallyPoint, attackPastr, spawnDir);
+                for (int i = 2; i <= squadNumber; i ++) {
+                    comms.sendSquadCommand(i, attackPastr);
                 }
-                if (!isPastrAlive()) {
-                    trySpawnPastr();
-                } else if (!isTowerAlive()) {
-                    trySpawnTower();
-                } else {
-                    currentPastrTarget = getPastrTarget(currentPastrTarget);
-                    if (currentPastrTarget != null) {
-                        Command attackPastr = new Command(CommandType.ATTACK_PASTR, currentPastrTarget);
-                        for (int i = 2; i < squadNumber; i ++) {
-                            comms.sendSquadCommand(i, attackPastr);
-                        }
-                        trySpawnSquadMember(3, rallyPoint, new Command(CommandType.ATTACK_PASTR, currentPastrTarget));
-                    } else {
-                        trySpawnSquadMember(3, rallyPoint, new Command(CommandType.RALLY_POINT, rallyPoint));
-                    }
-                }
-                
-            }
-            break;
-        case OFFENSE_MACRO:
-            // If we are in the first squad...
-            currentPastrTarget = getPastrTarget(currentPastrTarget);
-            if (squadNumber <= 2 ) {
-                if (currentPastrTarget != null) {
-                    Command attackPastr = new Command(CommandType.ATTACK_PASTR, currentPastrTarget);
-                    for (int i = 2; i <= squadNumber; i ++) {
-                        comms.sendSquadCommand(i, attackPastr);
-                    }
-                    squadNumber ++;
-                    trySpawnSquadMember(100, rallyPoint, new Command(CommandType.ATTACK_PASTR, currentPastrTarget));
-                } else {
-                    trySpawnSquadMember(100, rallyPoint, new Command(CommandType.RALLY_POINT, rallyPoint));
-                }
-
+                System.out.println("Detected pastr at: " + currentPastrTarget.toString());
             } else {
-                if (bestPastrLoc == null) {
-                    if (!trySpawnPastr()) {
-                        return;
-                    }
-                    calcBestPastrLocation();
-                }
-                if (!isPastrAlive()) {
-                    trySpawnPastr();
-                } else if (!isTowerAlive()) {
-                    trySpawnTower();
+                MapLocation enemyCentroid;
+                BattleFront existing = comms.getBattle();
+                if (curRound - existing.roundNum < 5) {
+                    enemyCentroid = existing.enemyCentroid;
                 } else {
-                    if (currentPastrTarget != null) {
-                        Command attackPastr = new Command(CommandType.ATTACK_PASTR, currentPastrTarget);
-
-                        trySpawnSquadMember(100, rallyPoint, attackPastr);
-                        for (int i = 2; i <= squadNumber; i ++) {
-                            comms.sendSquadCommand(i, attackPastr);
-                        }
-                    } else {
-                        MapLocation enemyCentroid;
-                        BattleFront existing = comms.getBattle();
-                        if (curRound - existing.roundNum < 5) {
-                            enemyCentroid = existing.enemyCentroid;
-                        } else {
-                            enemyCentroid = enemyHQ;
-                        }
-                        Command attackGeneral = new Command(CommandType.ATTACK_PASTR, enemyCentroid);
-                        trySpawnSquadMember(100, rallyPoint, attackGeneral);
-                        for (int i = 2; i <= squadNumber; i ++) {
-                            comms.sendSquadCommand(i, attackGeneral);
-                        }
-                    }
+                    enemyCentroid = enemyHQ;
+                }
+                Command attackGeneral = new Command(CommandType.ATTACK_PASTR, enemyCentroid);
+                trySpawnSquadMember(10000, rallyPoint, attackGeneral, spawnDir);
+                for (int i = 2; i <= squadNumber; i ++) {
+                    comms.sendSquadCommand(i, attackGeneral);
                 }
             }
-
-            break;
-        case DEFENSE_MACRO:
-            if (bestPastrLoc == null) {
-                trySpawnPastr();
-                calcBestPastrLocation();
-            }
-            if (!isPastrAlive()) {
-                trySpawnPastr();
-            } else if (!isTowerAlive()) {
-                trySpawnTower();
-            } else {
-                
-                Command defPastr = new Command(CommandType.DEFEND_PASTR, bestPastrLoc);
-                if (currentPastrTarget != null) {
-                    Command attackPastr = new Command(CommandType.ATTACK_PASTR, currentPastrTarget);
-                    trySpawnSquadMember(SWARM_SIZE, rallyPoint, attackPastr);
-                    
-                } else {
-                    if (!trySpawnSquadMember(1, rallyPoint, defPastr)) {
-                        for (int i = 2; i <= squadNumber; i ++) {
-                            comms.sendSquadCommand(i, defPastr);
-                        }
-                    } else {
-                        for (int i = 2; i < squadNumber; i ++) {
-                            comms.sendSquadCommand(i, defPastr);
-                        }
-                    }
-                }
-            }
-            break;
         }
     }
     
