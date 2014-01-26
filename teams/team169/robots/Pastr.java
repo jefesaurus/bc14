@@ -23,7 +23,6 @@ public class Pastr extends BaseRobot {
         comms.updatePastrAlarm(RobotType.PASTR, alarm);
     }
     
-    
     @Override
     public void run() throws GameActionException {
         alertIfEnemySighted();
