@@ -90,6 +90,7 @@ public class HQRobot extends BaseRobot {
     public void run() throws GameActionException {
         Robot[] enemyRobots = rc.senseNearbyGameObjects(Robot.class,10000,rc.getTeam().opponent());
         tryToAttack(enemyRobots);
+        
         Direction spawnDir = null;
         if (enemyRobots.length > 0) {
             int enemyCentroidX = 0;
@@ -101,9 +102,12 @@ public class HQRobot extends BaseRobot {
                 case SOLDIER:
                     enemyCentroidX += info.location.x;
                     enemyCentroidY += info.location.y;
+                    numEnemySoldiers++;
                 }
             }
-            spawnDir = new MapLocation(enemyCentroidX / numEnemySoldiers, enemyCentroidY / numEnemySoldiers).directionTo(this.myHQ);
+            if (numEnemySoldiers > 0) {
+                spawnDir = new MapLocation(enemyCentroidX / numEnemySoldiers, enemyCentroidY / numEnemySoldiers).directionTo(this.myHQ);
+            }
         }
 
        /** if (bestPastrLoc == null) {

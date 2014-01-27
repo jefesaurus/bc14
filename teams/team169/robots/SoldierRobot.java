@@ -53,9 +53,17 @@ public class SoldierRobot extends BaseRobot {
    
     //Battle Constants
     //Number of extra units we need over the opponent to force a battle
-    public int ADVANTAGE_THRESHOLD = 2;
+    public int[] ADVANTAGE_THRESHOLD = {0,
+                                        1,1,1,1,1,1,1,
+                                        2,2,2,2,2,2,2,
+                                        3,3,3,3,3,3,3,
+                                        4,4,4,4};
     //Number of units the enemy can have over us and still not retreat
-    public int DEFENDERS_ADVANTAGE = 2;
+    public int[] DEFENDERS_ADVANTAGE = {0,
+                                        0,0,0,0,0,0,0,
+                                        1,1,1,1,1,1,1,
+                                        2,2,2,2,2,2,2,
+                                        3,3,3,3};
     
     public SoldierRobot(RobotController rc) throws GameActionException {
         super(rc);          
@@ -430,7 +438,7 @@ public class SoldierRobot extends BaseRobot {
             }
 
             // If we are in HQ range but there is no pastr, or we have a unit disdvantage, we need to bounce
-        } else if(enemyHQInRange || unitDisadvantage > DEFENDERS_ADVANTAGE) {
+        } else if(enemyHQInRange || unitDisadvantage > DEFENDERS_ADVANTAGE[numEnemySoldiers]) {
             // Retreat away or home
             rc.setIndicatorString(1, "retreating because enemy hq or unit disad");
             simpleBug(this.myHQ, false, false);
@@ -453,7 +461,7 @@ public class SoldierRobot extends BaseRobot {
             }
 
             // TODO tune what we consider a good enough advantage
-        } else if (unitDisadvantage > -ADVANTAGE_THRESHOLD && unitDisadvantage < 0 && !enemyHQInSight) {
+        } else if (unitDisadvantage > -ADVANTAGE_THRESHOLD[numEnemySoldiers] && unitDisadvantage < 0 && !enemyHQInSight) {
             //Strong enough support, lets advance            
             if(pastrLoc != null) {
                 if (rc.isActive() && rc.canAttackSquare(pastrLoc)) {
@@ -475,7 +483,7 @@ public class SoldierRobot extends BaseRobot {
                 }
             }
 
-        } else if (unitDisadvantage <= -ADVANTAGE_THRESHOLD && !enemyHQInSight) {
+        } else if (unitDisadvantage <= -ADVANTAGE_THRESHOLD[numEnemySoldiers] && !enemyHQInSight) {
             if(pastrLoc != null) {
                 if (rc.isActive() && rc.canAttackSquare(pastrLoc)) {
                     rc.attackSquare(pastrLoc);

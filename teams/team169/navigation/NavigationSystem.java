@@ -18,7 +18,7 @@ public class NavigationSystem {
     private int movesOnSameTarget;
     private int expectedMovesToReachTarget;
     private int bugTurnsBlocked;
-    private int HQ_SPLASH_RADIUS = 16;
+    private int HQ_SPLASH_RADIUS = 8;
     public NavigationSystem(BaseRobot br) {
         this.br = br;
         this.rc = br.rc;
@@ -268,7 +268,7 @@ public class NavigationSystem {
                 TerrainTile tt = rc.senseTerrainTile(
                         trialLoc);
                 if(bugTurnsBlocked < 3)
-                    movable[i] = ((tt==null) ? rc.canMove(dir) : (tt==TerrainTile.NORMAL || tt==TerrainTile.ROAD)) && (trialLoc.distanceSquaredTo(br.enemyHQ) > RobotType.HQ.attackRadiusMaxSquared + HQ_SPLASH_RADIUS);
+                    movable[i] = ((tt==null) ? rc.canMove(dir) : (tt==TerrainTile.NORMAL || tt==TerrainTile.ROAD)) && (trialLoc.distanceSquaredTo(br.enemyHQ) >= RobotType.HQ.attackRadiusMaxSquared + HQ_SPLASH_RADIUS);
                 else
                     movable[i] = rc.canMove(dir) && ((trialLoc.distanceSquaredTo(br.enemyHQ) > RobotType.HQ.attackRadiusMaxSquared + HQ_SPLASH_RADIUS));
             }
