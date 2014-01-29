@@ -50,7 +50,6 @@ public class SoldierRobot extends BaseRobot {
     
     public MapLocation pastrToDefend = null;
     public MapLocation pointInFrontOfPastrToDefend = null;
-    public Command lastCommand = null;
    
     //Battle Constants
     //Number of extra units we need over the opponent to force a battle
@@ -77,12 +76,10 @@ public class SoldierRobot extends BaseRobot {
 
     @Override
     public void run() throws GameActionException {
-        
         currentCommand = comms.getSquadCommand(squadNum);
         rc.setIndicatorString(2, "Squad num: " + squadNum + ", " + currentCommand.toString());
         Robot[] nearbyEnemies = rc.senseNearbyGameObjects(Robot.class, 100000, rc.getTeam().opponent());
         MapLocation destination = currentCommand.loc;
-        
 
 
         switch (currentCommand.type) {
@@ -464,7 +461,7 @@ public class SoldierRobot extends BaseRobot {
             }
 
             // TODO tune what we consider a good enough advantage
-        } else if (unitDisadvantage >= -ADVANTAGE_THRESHOLD[numEnemySoldiers] && unitDisadvantage < 0 && !enemyHQInSight) {
+        } else if (unitDisadvantage > -ADVANTAGE_THRESHOLD[numEnemySoldiers] && unitDisadvantage < 0 && !enemyHQInSight) {
             //Strong enough support, lets advance            
             if(pastrLoc != null) {
                 if (rc.isActive() && rc.canAttackSquare(pastrLoc)) {
@@ -486,7 +483,7 @@ public class SoldierRobot extends BaseRobot {
                 }
             }
 
-        } else if (unitDisadvantage < -ADVANTAGE_THRESHOLD[numEnemySoldiers] && !enemyHQInSight) {
+        } else if (unitDisadvantage <= -ADVANTAGE_THRESHOLD[numEnemySoldiers] && !enemyHQInSight) {
             if(pastrLoc != null) {
                 if (rc.isActive() && rc.canAttackSquare(pastrLoc)) {
                     rc.attackSquare(pastrLoc);

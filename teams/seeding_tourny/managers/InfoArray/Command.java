@@ -41,14 +41,4 @@ public class Command implements ArrayPackable {
         }
         return null;
     }
-    
-    @Override
-    public boolean equals(Object other) {
-        Command other_ = (Command) other;
-        if (this.loc == other_.loc && this.type == other_.type) {
-            return true;
-        } else  {
-            return false;
-        }
-    }
 }
