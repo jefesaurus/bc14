@@ -1,16 +1,16 @@
-package team169.robots;
+package team169_working.robots;
 
-import team169.Constants;
-import team169.managers.InfoArray.BattleFront;
-import team169.managers.InfoArray.BuildingInfo;
-import team169.managers.InfoArray.BuildingStatus;
-import team169.managers.InfoArray.BuildingType;
-import team169.managers.InfoArray.Command;
-import team169.navigation.NavigationMode;
-import team169.robots.SoldierRobot.ConstructionState;
-import team169.util.CowGrowth;
-import team169.util.Util;
-import team169.util.VectorFunctions;
+import team169_working.Constants;
+import team169_working.managers.InfoArray.BattleFront;
+import team169_working.managers.InfoArray.BuildingInfo;
+import team169_working.managers.InfoArray.BuildingStatus;
+import team169_working.managers.InfoArray.BuildingType;
+import team169_working.managers.InfoArray.Command;
+import team169_working.navigation.NavigationMode;
+import team169_working.robots.SoldierRobot.ConstructionState;
+import team169_working.util.CowGrowth;
+import team169_working.util.Util;
+import team169_working.util.VectorFunctions;
 import battlecode.common.Clock;
 import battlecode.common.Direction;
 import battlecode.common.GameActionException;
@@ -49,7 +49,7 @@ public class SoldierRobot extends BaseRobot {
     public MapLocation pastr_loc;
     
     public MapLocation pastrToDefend = null;
-    public MapLocation pointInFrontOfPastrToDefend = null;
+    public Command lastCommand = null;
    
     //Battle Constants
     //Number of extra units we need over the opponent to force a battle
@@ -73,13 +73,17 @@ public class SoldierRobot extends BaseRobot {
         nav.setNavigationMode(NavigationMode.BUG);
         cstate = ConstructionState.INIT;
     }
+    
+    public final int DEFENSE_RADIUS_SQUARED = 9;
 
     @Override
     public void run() throws GameActionException {
+        
         currentCommand = comms.getSquadCommand(squadNum);
         rc.setIndicatorString(2, "Squad num: " + squadNum + ", " + currentCommand.toString());
         Robot[] nearbyEnemies = rc.senseNearbyGameObjects(Robot.class, 100000, rc.getTeam().opponent());
         MapLocation destination = currentCommand.loc;
+        
 
 
         switch (currentCommand.type) {
@@ -105,123 +109,88 @@ public class SoldierRobot extends BaseRobot {
             break;
 
         case DEFEND_PASTR:
-           
-            if (pastrToDefend == null) {
-                MapLocation possiblePastrLoc = comms.getPastrLoc();
-                if(possiblePastrLoc.x > 0) {
-                    pastrToDefend = possiblePastrLoc;
-                    // Calculate the true defensive waypoint with the new info
-                    pointInFrontOfPastrToDefend = possiblePastrLoc;//VectorFunctions.compoundMapAdd(pastrToDefend, enemyHQ, 4);
-                } else {
-                    pointInFrontOfPastrToDefend = destination;
-                }
+            MapLocation possiblePastrLoc = comms.getPastrLoc();
+            if(possiblePastrLoc.x > 0) {
+                pastrToDefend = possiblePastrLoc;
+            } else {
+                pastrToDefend = destination;
             }
-            if(curLoc.distanceSquaredTo(pointInFrontOfPastrToDefend) <= 36 && nearbyEnemies.length > 0) {
+
+            if(curLoc.distanceSquaredTo(pastrToDefend) <= DEFENSE_RADIUS_SQUARED && nearbyEnemies.length > 0) {
+                rc.setIndicatorString(0, "Attempting to defense micro. Round: " + curRound);
                 if (rc.isActive()) {
-                    if (pastrToDefend == null) {
-                        defensiveMicro(nearbyEnemies, destination);
-                    } else {
-                        defensiveMicro(nearbyEnemies, pastrToDefend);
-                    }
+                    defensiveMicro(nearbyEnemies, pastrToDefend);
                 }
             } else {
-                // Initially populate the defense waypoint to the approximation:
-                if (pointInFrontOfPastrToDefend == null) {
-                    pointInFrontOfPastrToDefend = destination;
-                }
-                simpleBug(pointInFrontOfPastrToDefend, false, false);
+                rc.setIndicatorString(0, "Bugging to defense pastr. Round: " + curRound);
+                simpleBugToRadius(pastrToDefend, DEFENSE_RADIUS_SQUARED, false, false);
             } 
             
             break;
             
         case BUILD_PASTR:
-            switch (this.cstate) {
-            case INIT: 
-                MapLocation pastrLoc = comms.getPastrLoc();
-                if (pastrLoc.equals(new MapLocation(0,0))) {
-                    comms.setBuildingStatus(BuildingType.PASTR, new BuildingInfo(curRound, BuildingStatus.IS_COMPUTING, curLoc));
-                    while (comms.getSearchCoordinates()[3] == 0) {
-                        return; // effectively yield
-                    }
-                    int[] sc = comms.getSearchCoordinates();
-                    int[] bestLoc = new CowGrowth(this.rc, this).getBestLocation(sc[0], sc[1], sc[2], sc[3]);
-                    int HQBestScore = comms.wait_P_PASTR_SCORE_1();
-                    if (HQBestScore > bestLoc[2]) {
-                        pastrLoc = comms.wait_P_PASTR_LOC_1();
-                    } else {
-                        pastrLoc = new MapLocation(bestLoc[0], bestLoc[1]);
-                    }
-                    comms.setP_PASTR_LOC2(pastrLoc);
-
-                }
-                nav.setDestination(pastrLoc);
-                rc.setIndicatorString(2, nav.getDestination().toString());
-                this.cstate = ConstructionState.MOVE_TO_COARSE_LOC;
-
-            case MOVE_TO_COARSE_LOC:
-                comms.setBuildingStatus(BuildingType.PASTR, new BuildingInfo(curRound, BuildingStatus.IN_CONSTRUCTION, curLoc));
-
-                //System.out.println("coarse loc");
-                if (this.curLoc.distanceSquaredTo(nav.getDestination()) > FUZZY_BUILDING_PLACEMENT) {
-                    Direction toMove = nav.navigateToDestination(false);
-                    if (toMove != null) {
-                        simpleMove(toMove, false);
-                    }
-                } else {
-                    comms.setPastrLoc(this.curLoc);
-                    this.cstate = ConstructionState.MOVE_TO_EXACT_LOC;
-                }
-                break;
-
-            case MOVE_TO_EXACT_LOC: 
-                comms.setBuildingStatus(BuildingType.PASTR, new BuildingInfo(curRound, BuildingStatus.IN_CONSTRUCTION, curLoc));
-
-                if (rc.isActive()) {
-                    //System.out.println("constructing pastr now!");
-                    rc.construct(RobotType.PASTR);
-                    
-                    break;
+            comms.setBuildingStatus(BuildingType.PASTR, new BuildingInfo(curRound, BuildingStatus.MOVING_TO, curLoc));
+            BuildingInfo towerInfo = comms.getBuildingStatus(BuildingType.TOWER);
+            boolean isExact = false;
+            MapLocation moveTowards;
+            if ((towerInfo.roundNum - curRound) < 2 && towerInfo.status == BuildingStatus.ALL_GOOD || towerInfo.status == BuildingStatus.IN_CONSTRUCTION) {
+                moveTowards = towerInfo.loc;
+                isExact = true;
+            } else {
+                moveTowards = comms.getPastrLoc();
+                if (moveTowards.x == 0 && moveTowards.y == 0) {
+                    rc.setIndicatorString(1, "Location invalid");
+                    return;
                 }
             }
+
+            if (!isExact || this.curLoc.distanceSquaredTo(moveTowards) > FUZZY_BUILDING_PLACEMENT) {
+                rc.setIndicatorString(1, "Bugging to inexact location");
+
+                simpleBug(moveTowards, false, false);
+            } else if(isExact && curLoc.isAdjacentTo(moveTowards) && rc.isActive()) {
+                comms.setBuildingStatus(BuildingType.PASTR, new BuildingInfo(curRound, BuildingStatus.IN_CONSTRUCTION, curLoc));
+                rc.construct(RobotType.PASTR);
+            } else {
+                rc.setIndicatorString(1, "Finding adjacent location");
+                adjacent = findAdjacentSquare(moveTowards);
+                simpleBug(adjacent, false, false);
+            }
+
             break;
         case BUILD_NOISE_TOWER:
-            comms.setBuildingStatus(BuildingType.TOWER, new BuildingInfo(curRound, BuildingStatus.IN_CONSTRUCTION, curLoc));
-            MapLocation possiblePastrLoc = comms.wait_P_PASTR_LOC_2();
-
-            switch (this.cstate) {
-            case INIT:
-                destination = possiblePastrLoc;
-                nav.setDestination(possiblePastrLoc);
-                this.cstate = ConstructionState.MOVE_TO_COARSE_LOC;
-            case MOVE_TO_COARSE_LOC:
-                rc.setIndicatorString(1, "Finding coarse location");
-                if (this.curLoc.distanceSquaredTo(possiblePastrLoc) > FUZZY_BUILDING_PLACEMENT) {
-                    simpleBug(nav.getDestination(), false, false);
-                    break;
+            
+            // Get the existing ideal pastr location.
+            MapLocation pastrLoc = comms.getPastrLoc();
+            
+            // If it isn't valid, begin calculation
+            if (pastrLoc.equals(new MapLocation(0,0))) {
+                comms.setBuildingStatus(BuildingType.TOWER, new BuildingInfo(curRound, BuildingStatus.IS_COMPUTING, curLoc));
+                while (comms.getSearchCoordinates()[3] == 0) {
+                    return; // effectively yield
+                }
+                int[] sc = comms.getSearchCoordinates();
+                int[] bestLoc = new CowGrowth(this.rc, this).getBestLocation(sc[0], sc[1], sc[2], sc[3]);
+                int HQBestScore = comms.wait_P_PASTR_SCORE_1();
+                if (HQBestScore > bestLoc[2]) {
+                    pastrLoc = comms.wait_P_PASTR_LOC_1();
                 } else {
-                    this.cstate = ConstructionState.MOVE_TO_EXACT_LOC;
+                    pastrLoc = new MapLocation(bestLoc[0], bestLoc[1]);
                 }
-            case MOVE_TO_EXACT_LOC:
-                MapLocation exactLoc = comms.wait_PASTR_LOC_FINAL();
-                if (exactLoc == null) {
-                    break;
-                }
-                adjacent = findAdjacentSquare(exactLoc);
-                nav.setDestination(adjacent);
-                if (!rc.getLocation().equals(adjacent)) {
-                    rc.setIndicatorString(2, "Not adjacent");
-
-                    simpleBug(adjacent, false, false);
-                } else {
-                    rc.setIndicatorString(2, "is adjacent");
-                    if (rc.isActive()) {
-                        rc.construct(RobotType.NOISETOWER);
-                    }
-                }
-                break;
-            default:
-                break;
+                // When finished, set the ideal pastr location
+                comms.setPastrLoc(pastrLoc);
             }
+            
+            // Navigate towards it
+            if ( this.curLoc.distanceSquaredTo(pastrLoc) > FUZZY_BUILDING_PLACEMENT) {
+                comms.setBuildingStatus(BuildingType.TOWER, new BuildingInfo(curRound, BuildingStatus.MOVING_TO, curLoc));
+                rc.setIndicatorString(1, "Bugging to inexact location");
+                simpleBug(pastrLoc, false, false);
+            } else if(rc.isActive()){
+                comms.setBuildingStatus(BuildingType.TOWER, new BuildingInfo(curRound, BuildingStatus.IN_CONSTRUCTION, curLoc));
+                rc.construct(RobotType.NOISETOWER);  
+            }
+            break;
         }
     }
 
@@ -241,6 +210,20 @@ public class SoldierRobot extends BaseRobot {
         Direction toMove = nav.navigateToDestination(EnterHQAttackZone);
         if (toMove != null) {
             simpleMove(toMove, sneak);
+        }
+    }
+    
+    public void simpleBugToRadius(MapLocation destination, int radius, boolean sneak, boolean EnterHQAttackZone) throws GameActionException {
+        int distance = curLoc.distanceSquaredTo(destination) - radius;
+        if (distance > 0) {
+            rc.setIndicatorString(1, "Attempting to bug: round: " + curRound);
+            nav.setDestination(destination);
+            Direction toMove = nav.navigateToDestination(EnterHQAttackZone);
+            if (toMove != null) {
+                simpleMove(toMove, sneak);
+            }
+        } else {
+            rc.setIndicatorString(1, "Within range. No need to bug. Round: " + curRound);
         }
     }
 
@@ -461,7 +444,7 @@ public class SoldierRobot extends BaseRobot {
             }
 
             // TODO tune what we consider a good enough advantage
-        } else if (unitDisadvantage > -ADVANTAGE_THRESHOLD[numEnemySoldiers] && unitDisadvantage < 0 && !enemyHQInSight) {
+        } else if (unitDisadvantage >= -ADVANTAGE_THRESHOLD[numEnemySoldiers] && unitDisadvantage < 0 && !enemyHQInSight) {
             //Strong enough support, lets advance            
             if(pastrLoc != null) {
                 if (rc.isActive() && rc.canAttackSquare(pastrLoc)) {
@@ -483,7 +466,7 @@ public class SoldierRobot extends BaseRobot {
                 }
             }
 
-        } else if (unitDisadvantage <= -ADVANTAGE_THRESHOLD[numEnemySoldiers] && !enemyHQInSight) {
+        } else if (unitDisadvantage < -ADVANTAGE_THRESHOLD[numEnemySoldiers] && !enemyHQInSight) {
             if(pastrLoc != null) {
                 if (rc.isActive() && rc.canAttackSquare(pastrLoc)) {
                     rc.attackSquare(pastrLoc);
@@ -554,9 +537,9 @@ public class SoldierRobot extends BaseRobot {
                 if (numEnemiesAlmostInRange > 0) {
                     return;
                 } else {
-                    if (curLoc.distanceSquaredTo(pointInFrontOfPastrToDefend) > 25) {
+                    if (curLoc.distanceSquaredTo(toDefend) > 25) {
                         rc.setIndicatorString(1, "Bugging: Because no one to attack and not in range of base.");
-                        simpleBug(pointInFrontOfPastrToDefend, false, false);
+                        simpleBug(toDefend, false, false);
                     } else {
                         return;
                     }

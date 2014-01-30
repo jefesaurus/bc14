@@ -1,6 +1,6 @@
-package team169.managers.InfoArray;
+package team169_working.managers.InfoArray;
 
-import team169.util.VectorFunctions;
+import team169_working.util.VectorFunctions;
 import battlecode.common.MapLocation;
 
 
@@ -40,5 +40,15 @@ public class Command implements ArrayPackable {
         case BUILD_NOISE_TOWER: return "BUILD_NOISE_TOWER: " + mapLoc;
         }
         return null;
+    }
+    
+    @Override
+    public boolean equals(Object other) {
+        Command other_ = (Command) other;
+        if (this.loc == other_.loc && this.type == other_.type) {
+            return true;
+        } else  {
+            return false;
+        }
     }
 }
