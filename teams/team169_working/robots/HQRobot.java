@@ -272,7 +272,6 @@ public class HQRobot extends BaseRobot {
 
 
     public boolean isPastrAlive() throws GameActionException {
-        comms.getPastrLoc();
         BuildingInfo info = comms.getBuildingStatus(BuildingType.PASTR);
         
         switch (info.status) {
@@ -290,7 +289,6 @@ public class HQRobot extends BaseRobot {
     }
     
     public boolean isTowerAlive() throws GameActionException {
-        comms.getPastrLoc();
         BuildingInfo info = comms.getBuildingStatus(BuildingType.TOWER);
         
         switch (info.status) {

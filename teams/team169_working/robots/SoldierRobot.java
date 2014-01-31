@@ -94,7 +94,7 @@ public class SoldierRobot extends BaseRobot {
         case ATTACK_POINT:
             if(nearbyEnemies.length > 0) {
                 if (rc.isActive()) {
-                    offensiveMicro(nearbyEnemies, null);
+                    offensiveMicro(nearbyEnemies, null, myHQ);
                 }
             } else {
                 simpleBug(destination, false, false);
@@ -104,7 +104,7 @@ public class SoldierRobot extends BaseRobot {
         case ATTACK_PASTR:
             if(nearbyEnemies.length > 0) {
                 if (rc.isActive()) {
-                    offensiveMicro(nearbyEnemies, destination);
+                    offensiveMicro(nearbyEnemies, destination, myHQ);
                 }
             } else {
                 simpleBug(destination, false, false);
@@ -112,35 +112,53 @@ public class SoldierRobot extends BaseRobot {
             break;
 
         case DEFEND_PASTR:
-            MapLocation possiblePastrLoc = comms.getPastrLoc();
-            if(possiblePastrLoc.x > 0) {
-                pastrToDefend = possiblePastrLoc;
-            } else {
-                pastrToDefend = destination;
-            }
+            BuildingInfo pastrInfo = comms.getBuildingStatus(BuildingType.PASTR);
+            if (pastrInfo.status == BuildingStatus.ALL_GOOD && (curRound - pastrInfo.roundNum) < 2) {
+                pastrToDefend = pastrInfo.loc;
+                MapLocation enemyCentroid = null;
+                BattleFront existing = comms.getBattle();
+                if (curRound - existing.roundNum < 5) {
+                    enemyCentroid = existing.enemyCentroid;
+                }
             
-            MapLocation enemyCentroid = null;
-            BattleFront existing = comms.getBattle();
-            if (curRound - existing.roundNum < 5) {
-                enemyCentroid = existing.enemyCentroid;
-            }
-            
-            
-            
-            if (enemyCentroid != null && enemyCentroid.distanceSquaredTo(pastrToDefend) <= DEFENSE_ENGAGE_RANGE) {
-                rc.setIndicatorString(1,"safely moving to destination " + pastrToDefend.add(pastrToDefend.directionTo(enemyCentroid)).toString());
-                safelyMoveToDestination(nearbyEnemies, pastrToDefend.add(pastrToDefend.directionTo(enemyCentroid)));
-            }
-            
-            if(curLoc.distanceSquaredTo(pastrToDefend) <= DEFENSE_RADIUS_SQUARED && nearbyEnemies.length > 0) {
-                rc.setIndicatorString(0, "Attempting to defense micro. Round: " + curRound);
+                if (enemyCentroid != null && enemyCentroid.distanceSquaredTo(pastrToDefend) <= DEFENSE_ENGAGE_RANGE) {
+                    rc.setIndicatorString(1,"safely moving to destination " + pastrToDefend.add(pastrToDefend.directionTo(enemyCentroid)).toString());
+                    safelyMoveToDestination(nearbyEnemies, pastrToDefend.add(pastrToDefend.directionTo(enemyCentroid)));
+                }
+                
+                if(curLoc.distanceSquaredTo(pastrToDefend) <= DEFENSE_RADIUS_SQUARED && nearbyEnemies.length > 0) {
+                    rc.setIndicatorString(0, "Attempting to defense micro. Round: " + curRound);
+                    if (rc.isActive()) {
+                        //defensiveMicro(nearbyEnemies, pastrToDefend);
+                        offensiveMicro(nearbyEnemies, destination, pastrToDefend);
+                    }
+                } else {
+                    //rc.setIndicatorString(0, "Bugging to defense pastr. Round: " + curRound);
+                    simpleBugToRadius(pastrToDefend, DEFENSE_RADIUS_SQUARED, false, false);
+                } 
+            } else if (nearbyEnemies.length > 0) {
                 if (rc.isActive()) {
-                    defensiveMicro(nearbyEnemies, pastrToDefend);
+                    offensiveMicro(nearbyEnemies, destination, myHQ);
                 }
             } else {
-                //rc.setIndicatorString(0, "Bugging to defense pastr. Round: " + curRound);
+                BuildingInfo towerInfo = comms.getBuildingStatus(BuildingType.TOWER);
+                if ((towerInfo.status == BuildingStatus.ALL_GOOD && (curRound - towerInfo.roundNum) < 2) ||
+                    (towerInfo.status == BuildingStatus.IN_CONSTRUCTION && (curRound - towerInfo.roundNum) < 200)) {
+                    pastrToDefend = towerInfo.loc;
+                    
+                } else {
+                    MapLocation possiblePastrLoc = comms.getPastrLoc();
+
+                    if(possiblePastrLoc.x > 0) {
+                        pastrToDefend = possiblePastrLoc;
+                    } else {
+                        pastrToDefend = destination;
+                    }
+                }
+
+                rc.setIndicatorString(2, "Defending to " + pastrToDefend);
                 simpleBugToRadius(pastrToDefend, DEFENSE_RADIUS_SQUARED, false, false);
-            } 
+            }
             
             break;
             
@@ -238,8 +256,6 @@ public class SoldierRobot extends BaseRobot {
             if (toMove != null) {
                 simpleMove(toMove, sneak);
             }
-        } else {
-            rc.setIndicatorString(1, "Within range. No need to bug. Round: " + curRound);
         }
     }
 
@@ -293,7 +309,7 @@ public class SoldierRobot extends BaseRobot {
      * BATTLE MICRO
      */
 
-    public void offensiveMicro(Robot[] nearbyEnemies, MapLocation pointToAttack) throws GameActionException {
+    public void offensiveMicro(Robot[] nearbyEnemies, MapLocation pointToAttack, MapLocation retreatPoint) throws GameActionException {
         // Enemy unittype counters
         boolean enemyHQInSight = false;
         boolean enemyHQInRange = false;
@@ -433,19 +449,21 @@ public class SoldierRobot extends BaseRobot {
                     simpleBug(pastrLoc, false, true);
                 }    
             } else {
-                simpleBug(this.myHQ, false, false);
+                simpleBug(retreatPoint, false, false);
             }
 
             // If we are in HQ range but there is no pastr, or we have a unit disdvantage, we need to bounce
-        } else if(enemyHQInRange || unitDisadvantage > DEFENDERS_ADVANTAGE[numEnemySoldiers] || rc.getHealth() <= RETREAT_HEALTH) {
+        } else if(enemyHQInRange || unitDisadvantage > DEFENDERS_ADVANTAGE[numEnemySoldiers]){// || rc.getHealth() <= RETREAT_HEALTH) {
             // Retreat away or home
-            rc.setIndicatorString(1, "retreating because enemy hq or unit disad");
-            simpleBug(this.curLoc.add(enemyCentroid.directionTo(this.curLoc), 3), false, false);
-        } /*else if(healthDisadvantage) {
+            //rc.setIndicatorString(1, "retreating because enemy hq or unit disad");
+            //simpleBug(this.curLoc.add(enemyCentroid.directionTo(this.curLoc), 3), false, false);
+            simpleBug(retreatPoint, false, false);
+
+        } else if(rc.getHealth() <= RETREAT_HEALTH) {
             // Retreat to center of allies
-            rc.setIndicatorString(0, "retreating because health disadvantage");
-            simpleBug(allyCentroid, false);
-        }*/
+            //rc.setIndicatorString(0, "retreating because health disadvantage");
+            simpleBug(allyCentroid, false, false);
+        }
 
         if (lowestHealthAttackableSoldier != null) {
             // If we can attack, we do
