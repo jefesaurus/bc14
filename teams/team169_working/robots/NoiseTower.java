@@ -103,6 +103,7 @@ package team169_working.robots;
             }
  */
 
+import team169_working.managers.InfoArray.BattleFront;
 import team169_working.managers.InfoArray.BuildingInfo;
 import team169_working.managers.InfoArray.BuildingStatus;
 import team169_working.managers.InfoArray.BuildingType;
@@ -112,6 +113,7 @@ import battlecode.common.GameActionException;
 import battlecode.common.MapLocation;
 import battlecode.common.Robot;
 import battlecode.common.RobotController;
+import battlecode.common.RobotInfo;
 import battlecode.common.RobotType;
 
 public class NoiseTower extends BaseRobot {

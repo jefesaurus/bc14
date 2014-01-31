@@ -65,6 +65,9 @@ public class SoldierRobot extends BaseRobot {
                                         2,2,2,2,2,2,2,
                                         3,3,3,3};
     
+    public int RETREAT_HEALTH = 20;
+    public int DEFENSE_ENGAGE_RANGE = 20;
+    
     public SoldierRobot(RobotController rc) throws GameActionException {
         super(rc);          
         squadNum = comms.getNewSpawnSquad();
@@ -80,7 +83,7 @@ public class SoldierRobot extends BaseRobot {
     public void run() throws GameActionException {
         
         currentCommand = comms.getSquadCommand(squadNum);
-        rc.setIndicatorString(2, "Squad num: " + squadNum + ", " + currentCommand.toString());
+        //rc.setIndicatorString(2, "Squad num: " + squadNum + ", " + currentCommand.toString());
         Robot[] nearbyEnemies = rc.senseNearbyGameObjects(Robot.class, 100000, rc.getTeam().opponent());
         MapLocation destination = currentCommand.loc;
         
@@ -116,13 +119,26 @@ public class SoldierRobot extends BaseRobot {
                 pastrToDefend = destination;
             }
             
+            MapLocation enemyCentroid = null;
+            BattleFront existing = comms.getBattle();
+            if (curRound - existing.roundNum < 5) {
+                enemyCentroid = existing.enemyCentroid;
+            }
+            
+            
+            
+            if (enemyCentroid != null && enemyCentroid.distanceSquaredTo(pastrToDefend) <= DEFENSE_ENGAGE_RANGE) {
+                rc.setIndicatorString(1,"safely moving to destination " + pastrToDefend.add(pastrToDefend.directionTo(enemyCentroid)).toString());
+                safelyMoveToDestination(nearbyEnemies, pastrToDefend.add(pastrToDefend.directionTo(enemyCentroid)));
+            }
+            
             if(curLoc.distanceSquaredTo(pastrToDefend) <= DEFENSE_RADIUS_SQUARED && nearbyEnemies.length > 0) {
                 rc.setIndicatorString(0, "Attempting to defense micro. Round: " + curRound);
                 if (rc.isActive()) {
                     defensiveMicro(nearbyEnemies, pastrToDefend);
                 }
             } else {
-                rc.setIndicatorString(0, "Bugging to defense pastr. Round: " + curRound);
+                //rc.setIndicatorString(0, "Bugging to defense pastr. Round: " + curRound);
                 simpleBugToRadius(pastrToDefend, DEFENSE_RADIUS_SQUARED, false, false);
             } 
             
@@ -421,7 +437,7 @@ public class SoldierRobot extends BaseRobot {
             }
 
             // If we are in HQ range but there is no pastr, or we have a unit disdvantage, we need to bounce
-        } else if(enemyHQInRange || unitDisadvantage > DEFENDERS_ADVANTAGE[numEnemySoldiers]) {
+        } else if(enemyHQInRange || unitDisadvantage > DEFENDERS_ADVANTAGE[numEnemySoldiers] || rc.getHealth() <= RETREAT_HEALTH) {
             // Retreat away or home
             rc.setIndicatorString(1, "retreating because enemy hq or unit disad");
             simpleBug(this.curLoc.add(enemyCentroid.directionTo(this.curLoc), 3), false, false);
@@ -472,7 +488,6 @@ public class SoldierRobot extends BaseRobot {
                     rc.attackSquare(pastrLoc);
                 } else {
                     rc.setIndicatorString(0, "Advancing to enemy pastr");
-
                     simpleBug(pastrLoc, false, false);
                 }
             } else {
@@ -482,9 +497,6 @@ public class SoldierRobot extends BaseRobot {
             
         } else {
             rc.setIndicatorString(1, "Yielding");
-
-            // Hold ground, don't waste movement
-            //rc.yield();
         }
     }
     
@@ -504,18 +516,21 @@ public class SoldierRobot extends BaseRobot {
          */
 
         // Tally up counters & metrics
+        System.out.println("nearby enemies length: " + nearbyEnemies.length + " roundnum: " + Clock.getRoundNum());
         RobotInfo lowestHealthAttackableSoldier = null;
         double lowestSoldierHealth = Integer.MAX_VALUE;
-        
+        int enemyCentroidX = 0; 
+        int enemyCentroidY = 0;
+        MapLocation enemyCentroid = null;
         for (Robot b : nearbyEnemies) {
             RobotInfo info = rc.senseRobotInfo(b);
 
             if(info.type == RobotType.SOLDIER) {
                 numEnemySoldiers++;
-                /*
+                
                 enemyCentroidX += info.location.x;
                 enemyCentroidY += info.location.y;
-                */
+                
                 if (rc.canAttackSquare(info.location)) {
 
                     if (info.health < lowestSoldierHealth) {
@@ -531,19 +546,33 @@ public class SoldierRobot extends BaseRobot {
             }
         }
         
+        if (numEnemySoldiers > 0) {
+            enemyCentroid = new MapLocation(enemyCentroidX / numEnemySoldiers, enemyCentroidY / numEnemySoldiers);
+        }
+        
+        BattleFront existing = comms.getBattle();
+        if (curRound - existing.roundNum > 3 || existing.numEnemies < numEnemySoldiers && enemyCentroid != null) {
+            comms.setBattle(new BattleFront(curRound, numEnemySoldiers, enemyCentroid));
+        }
+        
         // If there is no attackable soldier, we yield
         if (lowestHealthAttackableSoldier == null) {
+            
             if (numEnemySoldiers > 0) {
                 if (numEnemiesAlmostInRange > 0) {
+                    rc.setIndicatorString(2, "camping");
                     return;
                 } else {
-                    if (curLoc.distanceSquaredTo(toDefend) > 25) {
-                        rc.setIndicatorString(1, "Bugging: Because no one to attack and not in range of base.");
+                    
+                    if (curLoc.distanceSquaredTo(toDefend) > 40) {
+                        rc.setIndicatorString(2, "Bugging: Because no one to attack and not in range of base.");
                         simpleBug(toDefend, false, false);
                     } else {
                         return;
                     }
                 }   
+            } else {
+                simpleBug(toDefend, false, false);
             }
         } else {
             rc.setIndicatorString(2, "lowest health attackable soldier: " + lowestHealthAttackableSoldier.location.toString());
@@ -551,6 +580,33 @@ public class SoldierRobot extends BaseRobot {
                 rc.attackSquare(lowestHealthAttackableSoldier.location);
             }
         }
+    }
+    
+    public void safelyMoveToDestination(Robot[] nearbyEnemies, MapLocation loc) throws GameActionException {
+        Direction moveDirection = this.curLoc.directionTo(loc);
+        MapLocation projectedLoc = this.curLoc.add(moveDirection);
+        boolean enemiesAtProjectLoc = false;
+        for (Robot b : nearbyEnemies) {
+            RobotInfo info = rc.senseRobotInfo(b);
+
+            if(info.type == RobotType.SOLDIER) {
+                if (info.location.distanceSquaredTo(projectedLoc) <= 10) {
+                    System.out.println("I may be attacked!" + Clock.getRoundNum());
+                    enemiesAtProjectLoc = true;
+                    break;
+                }
+            }
+            
+        }
+        
+        if (enemiesAtProjectLoc) {
+            defensiveMicro(nearbyEnemies, loc);
+        } else {
+            if (!(this.curLoc.distanceSquaredTo(loc) <= 25)) {
+                simpleBug(loc, false, false);
+            }
+        }
+        
     }
     
     public int roundsUntilInRange(RobotInfo target) {

@@ -84,7 +84,7 @@ public class HQRobot extends BaseRobot {
     MapLocation currentPastrTarget = null;
 
     public int SWARM_SIZE = 4;
-    public int WINNING_ADVANTAGE = 4;
+    public int WINNING_ADVANTAGE = 6;
     @Override
     public void run() throws GameActionException {
         Robot[] enemyRobots = rc.senseNearbyGameObjects(Robot.class,10000,rc.getTeam().opponent());
@@ -159,7 +159,7 @@ public class HQRobot extends BaseRobot {
                 }
             }
         } else {
-            System.out.println("We're Winning! " + Clock.getRoundNum());
+            //System.out.println("We're Winning! " + Clock.getRoundNum());
 
 
             if (PASTR_UNDER_ATTACK) {
@@ -169,15 +169,15 @@ public class HQRobot extends BaseRobot {
                 }
             }
             if (bestPastrLoc == null) {
-                System.out.println("Trying to spawn initial pastr");
+                //System.out.println("Trying to spawn initial pastr");
 
                 if (!trySpawnTower()) {
                     return;
                 }
-                System.out.println("Starting position calc");
+                //System.out.println("Starting position calc");
 
                 calcBestPastrLocation();
-                System.out.println("Finished position calc");
+                //System.out.println("Finished position calc");
 
             }
             
