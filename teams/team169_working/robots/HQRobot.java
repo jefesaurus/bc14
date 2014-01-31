@@ -124,13 +124,6 @@ public class HQRobot extends BaseRobot {
         int ourTotalDeaths = NumUnitsProduced - rc.senseRobotCount();
         //System.out.println("our deaths: " + ourTotalDeaths + " round num: " + Clock.getRoundNum());
         //System.out.println("their deaths: " + comms.readKillCount() + " round num: " + Clock.getRoundNum());
-
-        if (isPastrAlive()) {
-            ourTotalDeaths -= 1;
-        }
-        if (isTowerAlive()) {
-            ourTotalDeaths -= 1;
-        }
         
         if (ourTotalDeaths + WINNING_ADVANTAGE < comms.readKillCount()) {
             WINNING = true;

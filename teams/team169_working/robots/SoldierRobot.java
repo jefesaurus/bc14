@@ -115,7 +115,7 @@ public class SoldierRobot extends BaseRobot {
             } else {
                 pastrToDefend = destination;
             }
-
+            
             if(curLoc.distanceSquaredTo(pastrToDefend) <= DEFENSE_RADIUS_SQUARED && nearbyEnemies.length > 0) {
                 rc.setIndicatorString(0, "Attempting to defense micro. Round: " + curRound);
                 if (rc.isActive()) {
@@ -424,7 +424,7 @@ public class SoldierRobot extends BaseRobot {
         } else if(enemyHQInRange || unitDisadvantage > DEFENDERS_ADVANTAGE[numEnemySoldiers]) {
             // Retreat away or home
             rc.setIndicatorString(1, "retreating because enemy hq or unit disad");
-            simpleBug(this.myHQ, false, false);
+            simpleBug(this.curLoc.add(enemyCentroid.directionTo(this.curLoc), 3), false, false);
         } /*else if(healthDisadvantage) {
             // Retreat to center of allies
             rc.setIndicatorString(0, "retreating because health disadvantage");
