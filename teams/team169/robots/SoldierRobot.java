@@ -475,7 +475,7 @@ public class SoldierRobot extends BaseRobot {
             if (numAllySoldiers > 4) {
                 simpleBug(allyCentroid, false, false);
             } else {
-                simpleBug(this.curLoc.add(enemyCentroid.directionTo(this.curLoc), 100), false, false);
+                simpleBug(this.curLoc.add(enemyCentroid.directionTo(this.curLoc)), false, false);
             }
         }
 
