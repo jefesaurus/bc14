@@ -1,12 +1,12 @@
-package team169.robots;
+package team169_baseline.robots;
 
 import java.util.ArrayList;
 import java.util.Random;
 
-import team169.managers.InfoCache;
-import team169.managers.MapCacheSystem;
-import team169.managers.InfoArray.InfoArrayManager;
-import team169.navigation.NavigationSystem;
+import team169_baseline.managers.InfoCache;
+import team169_baseline.managers.MapCacheSystem;
+import team169_baseline.managers.InfoArray.InfoArrayManager;
+import team169_baseline.navigation.NavigationSystem;
 import battlecode.common.Clock;
 import battlecode.common.Direction;
 import battlecode.common.GameActionException;
@@ -68,6 +68,9 @@ public abstract class BaseRobot {
         nav = new NavigationSystem(this);
         mc = new MapCacheSystem(this);
         updateRoundVariables();
+        rc.setIndicatorString(0,"Round: " + curRound);
+        rc.setIndicatorString(1,"Round: " + curRound);
+        rc.setIndicatorString(2,"Round: " + curRound);
     }
 
     public abstract void run() throws GameActionException;
@@ -83,6 +86,16 @@ public abstract class BaseRobot {
                 // Main Run Call
                 run();
 
+
+                // Check if we've already run out of bytecodes
+                int bcUsed = Clock.getBytecodeNum();
+                if (bcUsed < GameConstants.FREE_BYTECODES) {
+                    // We need to use these.
+                } else if (bcUsed < GameConstants.BYTECODE_LIMIT) {
+                    // We *can* use these
+                } else {
+                    System.out.println("Hit bytecode limit");
+                }
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -96,7 +109,20 @@ public abstract class BaseRobot {
         curRound = Clock.getRoundNum();
         curLoc = rc.getLocation();
     }
+    public void resetClock() {
+        executeStartRound = Clock.getRoundNum();
+        executeStartByte = Clock.getBytecodeNum();
+    }
 
+    private boolean checkClock() {
+        if(executeStartRound==Clock.getRoundNum())
+            return false;
+        int currRound = Clock.getRoundNum();
+        //int byteCount = (GameConstants.BYTECODE_LIMIT-executeStartByte) + (currRound-executeStartRound-1) * GameConstants.BYTECODE_LIMIT + Clock.getBytecodeNum();
+//        dbg.println('e', "Warning: Over Bytecode @"+executeStartTime+"-"+currRound +":"+ byteCount);
+        return true;
+    }
+    
     /** Should be overridden by any robot that wants to do movements. 
      * @return a new MoveInfo structure that either represents a spawn, a move, or a turn
      */

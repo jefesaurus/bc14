@@ -1,14 +1,17 @@
-package team169.robots;
+package team169_baseline.robots;
 
-import team169.Constants;
-import team169.managers.InfoArray.BattleFront;
-import team169.managers.InfoArray.BuildingInfo;
-import team169.managers.InfoArray.BuildingStatus;
-import team169.managers.InfoArray.BuildingType;
-import team169.managers.InfoArray.Command;
-import team169.navigation.NavigationMode;
-import team169.util.CowGrowth;
-import team169.util.Util;
+import team169_baseline.Constants;
+import team169_baseline.managers.InfoArray.BattleFront;
+import team169_baseline.managers.InfoArray.BuildingInfo;
+import team169_baseline.managers.InfoArray.BuildingStatus;
+import team169_baseline.managers.InfoArray.BuildingType;
+import team169_baseline.managers.InfoArray.Command;
+import team169_baseline.navigation.NavigationMode;
+import team169_baseline.robots.SoldierRobot.ConstructionState;
+import team169_baseline.util.CowGrowth;
+import team169_baseline.util.Util;
+import team169_baseline.util.VectorFunctions;
+import battlecode.common.Clock;
 import battlecode.common.Direction;
 import battlecode.common.GameActionException;
 import battlecode.common.MapLocation;
@@ -110,7 +113,6 @@ public class SoldierRobot extends BaseRobot {
             BuildingInfo pastrInfo = comms.getBuildingStatus(BuildingType.PASTR);
             if (pastrInfo.status == BuildingStatus.ALL_GOOD && (curRound - pastrInfo.roundNum) < 2) {
                 pastrToDefend = pastrInfo.loc;
-                //rc.setIndicatorString(1, "Defending: " + pastrToDefend + " round: " + curRound);
                 MapLocation enemyCentroid = null;
                 BattleFront existing = comms.getBattle();
                 if (curRound - existing.roundNum < 5) {
@@ -121,13 +123,22 @@ public class SoldierRobot extends BaseRobot {
                     if (rc.isActive()) {
                         offensiveMicro(nearbyEnemies, enemyCentroid, myHQ);
                     }
-                } else if(nearbyEnemies.length > 0) {
+                }
+                
+                if(curLoc.distanceSquaredTo(pastrToDefend) <= DEFENSE_RADIUS_SQUARED && nearbyEnemies.length > 0) {
                     if (rc.isActive()) {
                         //defensiveMicro(nearbyEnemies, pastrToDefend);
                         offensiveMicro(nearbyEnemies, destination, pastrToDefend);
                     }
                 } else {
-                    simpleBugToRadius(pastrToDefend, DEFENSE_RADIUS_SQUARED, false, false);
+                    if (nearbyEnemies.length > 0) {
+                        if (rc.isActive()) {
+                            offensiveMicro(nearbyEnemies, destination, pastrToDefend);
+                        }
+                    } else {
+                    //rc.setIndicatorString(0, "Bugging to defense pastr. Round: " + curRound);
+                        simpleBugToRadius(pastrToDefend, DEFENSE_RADIUS_SQUARED, false, false);
+                    }
                 } 
             } else if (nearbyEnemies.length > 0) {
                 if (rc.isActive()) {
@@ -306,6 +317,8 @@ public class SoldierRobot extends BaseRobot {
         int squaredDistanceToClosestEnemy = Integer.MAX_VALUE;
         RobotInfo closestEnemy = null;
         // Useful metrics
+        double enemyNumHits = 0;
+
         int enemyCentroidX = 0;
         int enemyCentroidY = 0;
 
@@ -315,8 +328,7 @@ public class SoldierRobot extends BaseRobot {
         RobotInfo lowestHealthAttackableSoldier = null;
         double lowestSoldierHealth = Integer.MAX_VALUE;
         MapLocation pastrLoc = null;
-
-        
+        MapLocation towerLoc;
         for (Robot b : nearbyEnemies) {
             RobotInfo info = rc.senseRobotInfo(b);
             switch(info.type) {
@@ -330,6 +342,7 @@ public class SoldierRobot extends BaseRobot {
                 enemyCentroidY += info.location.y;
                 if (rc.canAttackSquare(info.location)) {
                     potentialDamage += RobotType.SOLDIER.attackPower;
+                    enemyNumHits += 1 + (int)info.health;
                     if (info.health < lowestSoldierHealth) {
                         lowestHealthAttackableSoldier = info;
                         lowestSoldierHealth = info.health;
@@ -339,6 +352,10 @@ public class SoldierRobot extends BaseRobot {
 
             case PASTR:
                 pastrLoc = info.location;
+                break;
+
+            case NOISETOWER:
+                towerLoc = info.location;
                 break;
 
             case HQ:
@@ -381,6 +398,10 @@ public class SoldierRobot extends BaseRobot {
         // Enemy unittype counters
         int numAllySoldiers = 0;
 
+        // Useful metrics
+        double allyAverageSoldierHealth = 0;
+        double allyNumHits = 0;
+
         int allyCentroidX = 0;
         int allyCentroidY = 0;
 
@@ -389,8 +410,10 @@ public class SoldierRobot extends BaseRobot {
 
             if (info.type == RobotType.SOLDIER) {
                 numAllySoldiers++;
+                allyAverageSoldierHealth += info.health;
                 allyCentroidX += info.location.x;
                 allyCentroidY += info.location.y;
+                allyNumHits += 1 + (int)(info.health/RobotType.SOLDIER.attackPower);
             } else if(info.type == RobotType.HQ) {
                 numAllySoldiers++;
             }
@@ -400,11 +423,30 @@ public class SoldierRobot extends BaseRobot {
         // Finalize the averaged metrics
         if (numAllySoldiers > 0) {
             allyCentroid = new MapLocation(allyCentroidX/numAllySoldiers, allyCentroidY/numAllySoldiers);
+            allyAverageSoldierHealth /= (numAllySoldiers);
         } else {
             allyCentroid = this.curLoc;
         }
 
+        boolean enemyHQPastrCombo = enemyHQInSight && (pastrLoc != null) && (this.enemyHQ.distanceSquaredTo(pastrLoc) < 9);
         int unitDisadvantage = numEnemySoldiers - numAllySoldiers;
+        boolean healthDisadvantage = rc.getHealth() < allyAverageSoldierHealth;
+
+        // Retreat logic:
+        // Only attack HQ pastr combo if we have unit parity/advantage
+    /*    if (enemyHQPastrCombo) {
+            rc.setIndicatorString(0, "Enemy + pastr");
+
+            if (unitDisadvantage < -1) {
+                // Attack PASTR
+                if (rc.canAttackSquare(pastrLoc)) {
+                    rc.attackSquare(pastrLoc);
+                } else {
+                    simpleBug(pastrLoc, false, true);
+                }    
+            } else {
+                simpleBug(retreatPoint, false, false);
+            }*/
 
             // If we are in HQ range but there is no pastr, or we have a unit disdvantage, we need to bounce
        if(enemyHQInRange || unitDisadvantage > DEFENDERS_ADVANTAGE[numEnemySoldiers]){// || rc.getHealth() <= RETREAT_HEALTH) {
@@ -414,7 +456,7 @@ public class SoldierRobot extends BaseRobot {
            if (numAllySoldiers > 4) {
                simpleBug(retreatPoint, false, false);
            } else {
-               simpleBug(this.curLoc.add(enemyCentroid.directionTo(this.curLoc)), false, false);
+                   simpleBug(this.curLoc.add(enemyCentroid.directionTo(this.curLoc)), false, false);
            }
 
         } else if(rc.getHealth() <= RETREAT_HEALTH || potentialDamage >= rc.getHealth()) {
@@ -469,7 +511,85 @@ public class SoldierRobot extends BaseRobot {
            
         }
     }
- 
+    
+    /*
+     * BATTLE MICRO
+     */
+
+    public void defensiveMicro(Robot[] nearbyEnemies, MapLocation toDefend) throws GameActionException {
+        // Enemy unittype counters
+        int numEnemySoldiers = 0;
+        int numEnemiesAlmostInRange = 0;
+
+        /*
+        // Useful metrics
+        int enemyCentroidX = 0;
+        int enemyCentroidY = 0;
+         */
+
+        // Tally up counters & metrics
+        System.out.println("nearby enemies length: " + nearbyEnemies.length + " roundnum: " + Clock.getRoundNum());
+        RobotInfo lowestHealthAttackableSoldier = null;
+        double lowestSoldierHealth = Integer.MAX_VALUE;
+        int enemyCentroidX = 0; 
+        int enemyCentroidY = 0;
+        MapLocation enemyCentroid = null;
+        for (Robot b : nearbyEnemies) {
+            RobotInfo info = rc.senseRobotInfo(b);
+
+            if(info.type == RobotType.SOLDIER) {
+                numEnemySoldiers++;
+                
+                enemyCentroidX += info.location.x;
+                enemyCentroidY += info.location.y;
+                
+                if (rc.canAttackSquare(info.location)) {
+
+                    if (info.health < lowestSoldierHealth) {
+                        lowestHealthAttackableSoldier = info;
+                        lowestSoldierHealth = info.health;
+                    }
+                } else {
+                    if (roundsUntilInRange(info) < 3.0) {
+                        // This thing will be in range before we have another turn, lets camp.
+                        numEnemiesAlmostInRange++;
+                    }
+                }
+            }
+        }
+        
+        if (numEnemySoldiers > 0) {
+            enemyCentroid = new MapLocation(enemyCentroidX / numEnemySoldiers, enemyCentroidY / numEnemySoldiers);
+        }
+        
+        BattleFront existing = comms.getBattle();
+        if (curRound - existing.roundNum > 3 || existing.numEnemies < numEnemySoldiers && enemyCentroid != null) {
+            comms.setBattle(new BattleFront(curRound, numEnemySoldiers, enemyCentroid));
+        }
+        
+        // If there is no attackable soldier, we yield
+        if (lowestHealthAttackableSoldier == null) {
+            
+            if (numEnemySoldiers > 0) {
+                if (numEnemiesAlmostInRange > 0) {
+                    return;
+                } else {
+                    
+                    if (curLoc.distanceSquaredTo(toDefend) > 40) {
+                        simpleBug(toDefend, false, false);
+                    } else {
+                        return;
+                    }
+                }   
+            } else {
+                simpleBug(toDefend, false, false);
+            }
+        } else {
+            if (rc.isActive() && rc.canAttackSquare(lowestHealthAttackableSoldier.location)) {
+                rc.attackSquare(lowestHealthAttackableSoldier.location);
+            }
+        }
+    }
     
     public int roundsUntilInRange(RobotInfo target) {
         return (int)(target.actionDelay + 1

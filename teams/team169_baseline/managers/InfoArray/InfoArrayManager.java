@@ -1,7 +1,7 @@
-package team169.managers.InfoArray;
+package team169_baseline.managers.InfoArray;
 
-import team169.managers.InfoArray.Command;
-import team169.util.VectorFunctions;
+import team169_baseline.managers.InfoArray.Command;
+import team169_baseline.util.VectorFunctions;
 import battlecode.common.Clock;
 import battlecode.common.GameActionException;
 import battlecode.common.MapLocation;
@@ -47,7 +47,7 @@ public class InfoArrayManager {
     static final int KILL_COUNT = P_SEARCH_COORDINATES + 1;
     static final int PASTR_ALARM = KILL_COUNT + 1;
     static final int TOWER_ALARM = PASTR_ALARM + 1;
-
+    static final int WINNING_STATUS = TOWER_ALARM + 1;
 
     public InfoArrayManager(RobotController rc) throws GameActionException {
         this.rc = rc;
@@ -279,5 +279,18 @@ public class InfoArrayManager {
         battleFront.toUnpacked(packets);
         return battleFront;
     }
-
+    
+    public void setWinningStatus(boolean winningStatus, int round) throws GameActionException {
+        if (winningStatus) {
+            rc.broadcast(WINNING_STATUS, round);
+        } else {
+            rc.broadcast(WINNING_STATUS, -round);
+        }
+    }
+    
+    public int getWinningStatus() throws GameActionException {
+        return rc.readBroadcast(WINNING_STATUS);
+    }
+    
+    
 }

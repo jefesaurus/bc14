@@ -1,14 +1,14 @@
-package team169.robots;
+package team169_baseline.robots;
 
-import team169.Constants;
-import team169.managers.InfoCache;
-import team169.managers.InfoArray.BattleFront;
-import team169.managers.InfoArray.BuildingInfo;
-import team169.managers.InfoArray.BuildingType;
-import team169.managers.InfoArray.Command;
-import team169.managers.InfoArray.CommandType;
-import team169.util.CowGrowth;
-import team169.util.VectorFunctions;
+import team169_baseline.Constants;
+import team169_baseline.managers.InfoCache;
+import team169_baseline.managers.InfoArray.BattleFront;
+import team169_baseline.managers.InfoArray.BuildingInfo;
+import team169_baseline.managers.InfoArray.BuildingType;
+import team169_baseline.managers.InfoArray.Command;
+import team169_baseline.managers.InfoArray.CommandType;
+import team169_baseline.util.CowGrowth;
+import team169_baseline.util.VectorFunctions;
 import battlecode.common.Clock;
 import battlecode.common.Direction;
 import battlecode.common.GameActionException;
@@ -48,9 +48,7 @@ public class HQRobot extends BaseRobot {
 
     public HQRobot(RobotController rc) throws GameActionException {
         super(rc);
-        //rallyPoint = VectorFunctions.mldivide(VectorFunctions.mladd(this.myHQ, this.enemyHQ), 3);//, 2);
         rallyPoint = VectorFunctions.mldivide(VectorFunctions.mladd(this.myHQ, this.enemyHQ), 2);
-        //rallyPoint = enemyHQ;
         directionToEnemyHQ = this.myHQ.directionTo(this.enemyHQ);
         
         
@@ -100,7 +98,8 @@ public class HQRobot extends BaseRobot {
             int numEnemySoldiers = 0;
             for (Robot r : enemyRobots) {
                 RobotInfo info = rc.senseRobotInfo(r);
-                if (info.type == RobotType.SOLDIER) {
+                switch (info.type) {
+                case SOLDIER:
                     enemyCentroidX += info.location.x;
                     enemyCentroidY += info.location.y;
                     numEnemySoldiers++;
@@ -115,16 +114,20 @@ public class HQRobot extends BaseRobot {
         currentPastrTarget = getPastrTarget(currentPastrTarget);
 
         double ourTotalDeaths = NumUnitsProduced - rc.senseRobotCount();
-
+        //System.out.println("our deaths: " + ourTotalDeaths + " round num: " + Clock.getRoundNum());
+        //System.out.println("their deaths: " + comms.readKillCount() + " round num: " + Clock.getRoundNum());
         
         if (ourTotalDeaths + WINNING_ADVANTAGE < comms.readKillCount() && MILK_ADVANTAGE) {
             WINNING = true;
+            comms.setWinningStatus(true, curRound);
         } else {
             WINNING = false;
+            comms.setWinningStatus(false, curRound);
         }
         
         if (currentPastrTarget != null && currentPastrTarget.distanceSquaredTo(this.enemyHQ) <= 9 && Clock.getRoundNum() <= 300) {
             WINNING = true;
+            comms.setWinningStatus(true, curRound);
         }
         
         boolean PASTR_UNDER_ATTACK = comms.checkPastrAlarm();
@@ -200,48 +203,14 @@ public class HQRobot extends BaseRobot {
     }
     
     public void tryToAttack(Robot[] enemyRobots) throws GameActionException {
-        if (!rc.isActive()) {
-            return;
-        }
-        boolean canDirectAttack = false;
-        MapLocation lowestHealthLoc = null;
-        double lowestSoldierHealth = Integer.MAX_VALUE;
-        for (Robot b : enemyRobots) {
-            RobotInfo info = rc.senseRobotInfo(b);
-            if (info.type == RobotType.SOLDIER) {
-                int distTo = myHQ.distanceSquaredTo(info.location);
-                if (canDirectAttack) {
-                    if (distTo <= 15 && info.health < lowestSoldierHealth) {
-                        lowestHealthLoc = info.location;
-                        lowestSoldierHealth = info.health;        
-                    }
-                } else {
-                    if (distTo <= 15) {
-                        canDirectAttack = true;
-                        lowestHealthLoc = info.location;
-                        lowestSoldierHealth = info.health;        
-                    } else if (info.health < lowestSoldierHealth) {
-                        if(distTo <= 24 || (distTo == 25 && info.location.x != myHQ.x && info.location.y != myHQ.y)) {
-                            lowestHealthLoc = info.location;
-                            lowestSoldierHealth = info.health; 
-                        }      
-                    }
-                }
-            }
-        }
-        if (lowestHealthLoc != null && rc.isActive()) {
-            if (canDirectAttack) {
-                rc.attackSquare(lowestHealthLoc);
-            } else {
-                MapLocation toAttack = lowestHealthLoc.add(lowestHealthLoc.directionTo(curLoc));
-
-                if (!rc.canAttackSquare(toAttack)) {
-                    toAttack = toAttack.add(toAttack.directionTo(curLoc));
-                }
-                rc.attackSquare(lowestHealthLoc.add(lowestHealthLoc.directionTo(curLoc)));
-            }
-        }
+        MapLocation[] robotLocations = VectorFunctions.robotsToLocations(enemyRobots, rc);
         
+        if(robotLocations.length>0){
+            MapLocation closestEnemyLoc = VectorFunctions.findClosest(robotLocations, rc.getLocation());
+            if(rc.isActive() && rc.canAttackSquare(closestEnemyLoc)){
+                rc.attackSquare(closestEnemyLoc);
+            }
+        }
     }
     
     public void calcBestPastrLocation() throws GameActionException {

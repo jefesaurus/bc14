@@ -1,4 +1,4 @@
-package team169.robots;
+package team169_baseline.robots;
 
 /**
  * int x1 = rc.getLocation().x;
@@ -103,10 +103,11 @@ package team169.robots;
             }
  */
 
-import team169.managers.InfoArray.BuildingInfo;
-import team169.managers.InfoArray.BuildingStatus;
-import team169.managers.InfoArray.BuildingType;
-import team169.managers.InfoArray.PastrAlarm;
+import team169_baseline.managers.InfoArray.BattleFront;
+import team169_baseline.managers.InfoArray.BuildingInfo;
+import team169_baseline.managers.InfoArray.BuildingStatus;
+import team169_baseline.managers.InfoArray.BuildingType;
+import team169_baseline.managers.InfoArray.PastrAlarm;
 import battlecode.common.Clock;
 import battlecode.common.GameActionException;
 import battlecode.common.MapLocation;
@@ -149,35 +150,13 @@ public class NoiseTower extends BaseRobot {
         }
         comms.updatePastrAlarm(RobotType.NOISETOWER, alarm);
     }
-    
-    public void killSelfIfNecessary() throws GameActionException {
-        MapLocation enemyPastr = null;
-        Robot[] nearbyEnemies = rc.senseNearbyGameObjects(Robot.class, RobotType.NOISETOWER.attackRadiusMaxSquared, rc.getTeam().opponent());
-        for (Robot b : nearbyEnemies) {
-            RobotInfo botInfo = rc.senseRobotInfo(b);
-            if (botInfo.type == RobotType.PASTR) {
-                enemyPastr = botInfo.location;
-                break;
-            }
-        }
-        
-        if (enemyPastr != null) {
-            if (rc.isActive()) {
-                rc.attackSquare(enemyPastr);
-            }
-        }
-    }
-    
-    public boolean isPastrOkay() throws GameActionException {
-        BuildingInfo pastrStatus = comms.getBuildingStatus(BuildingType.PASTR);
-        int pastrStaleness = curRound - pastrStatus.roundNum;
-        return ((pastrStatus.status == BuildingStatus.ALL_GOOD ||
-                pastrStatus.status == BuildingStatus.MOVING_TO) && pastrStaleness < 5) ||
-                (pastrStatus.status == BuildingStatus.IN_CONSTRUCTION && pastrStaleness < 100);
-    }
+
     
     @Override
     public void run() throws GameActionException {
+
+
+
         
         //alertIfEnemySighted();
         switch (this.method) {
@@ -198,14 +177,7 @@ public class NoiseTower extends BaseRobot {
                     int err = dx;
                     while (new MapLocation(x,y).distanceSquaredTo(rc.getLocation()) > FUZZY_BORDER) {
                         while (true) {
-                            if (!isPastrOkay()) {
-                                killSelfIfNecessary();
-                                rc.yield();
-                                continue;
-                            }
-
                             comms.setBuildingStatus(BuildingType.TOWER, new BuildingInfo(Clock.getRoundNum(), BuildingStatus.ALL_GOOD, curLoc));
-
                             if (rc.isActive()) {
                                 if (new MapLocation(x,y).distanceSquaredTo(rc.getLocation()) < NOISE_THRESHOLD_BORDER) {
                                     rc.attackSquareLight(new MapLocation(x,y));             
@@ -228,11 +200,6 @@ public class NoiseTower extends BaseRobot {
                     int err = dy;
                     while (new MapLocation(x,y).distanceSquaredTo(rc.getLocation()) > FUZZY_BORDER) {
                         while (true) {
-                            if (!isPastrOkay()) {
-                                killSelfIfNecessary();
-                                rc.yield();
-                                continue;
-                            }
                             comms.setBuildingStatus(BuildingType.TOWER, new BuildingInfo(Clock.getRoundNum(), BuildingStatus.ALL_GOOD, curLoc));
 
                             if (rc.isActive()) {
