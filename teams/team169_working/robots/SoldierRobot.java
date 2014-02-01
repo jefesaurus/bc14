@@ -370,7 +370,7 @@ public class SoldierRobot extends BaseRobot {
 
             case HQ:
                 enemyHQInSight = true;
-                if (this.curLoc.distanceSquaredTo(info.location) <= RobotType.HQ.attackRadiusMaxSquared) {
+                if (this.curLoc.distanceSquaredTo(info.location) <= RobotType.HQ.attackRadiusMaxSquared + 9) {
                     enemyHQInRange = true;
                     potentialDamage += RobotType.HQ.attackPower;
                 }
@@ -442,11 +442,6 @@ public class SoldierRobot extends BaseRobot {
         int unitDisadvantage = numEnemySoldiers - numAllySoldiers;
         boolean healthDisadvantage = rc.getHealth() < allyAverageSoldierHealth;
 
-        if (this.curLoc.distanceSquaredTo(this.enemyHQ) <= RobotType.HQ.attackRadiusMaxSquared + 2) {
-            rc.setIndicatorString(2, "too close to hq, retreating!");
-            simpleBug(allyCentroid, false, false);
-        }
-
         // Retreat logic:
         // Only attack HQ pastr combo if we have unit parity/advantage
     /*    if (enemyHQPastrCombo) {
@@ -470,10 +465,14 @@ public class SoldierRobot extends BaseRobot {
             //simpleBug(this.curLoc.add(enemyCentroid.directionTo(this.curLoc), 3), false, false);
             simpleBug(retreatPoint, false, false);
 
-        } else if(rc.getHealth() <= RETREAT_HEALTH) {
+        } else if(rc.getHealth() <= RETREAT_HEALTH || potentialDamage >= rc.getHealth()) {
             // Retreat to center of allies
             //rc.setIndicatorString(0, "retreating because health disadvantage");
-            simpleBug(allyCentroid, false, false);
+            if (numAllySoldiers > 4) {
+                simpleBug(allyCentroid, false, false);
+            } else {
+                simpleBug(this.curLoc.add(enemyCentroid.directionTo(this.curLoc), 3), false, false);
+            }
         }
 
         if (lowestHealthAttackableSoldier != null) {
@@ -612,33 +611,6 @@ public class SoldierRobot extends BaseRobot {
                 rc.attackSquare(lowestHealthAttackableSoldier.location);
             }
         }
-    }
-    
-    public void safelyMoveToDestination(Robot[] nearbyEnemies, MapLocation loc, MapLocation retreatPoint) throws GameActionException {
-        Direction moveDirection = this.curLoc.directionTo(loc);
-        MapLocation projectedLoc = this.curLoc.add(moveDirection);
-        boolean enemiesAtProjectLoc = false;
-        for (Robot b : nearbyEnemies) {
-            RobotInfo info = rc.senseRobotInfo(b);
-
-            if(info.type == RobotType.SOLDIER) {
-                if (info.location.distanceSquaredTo(projectedLoc) <= 10) {
-                    System.out.println("I may be attacked!" + Clock.getRoundNum());
-                    enemiesAtProjectLoc = true;
-                    break;
-                }
-            }
-            
-        }
-        
-        if (enemiesAtProjectLoc) {
-            offensiveMicro(nearbyEnemies, loc, retreatPoint);
-        } else {
-            if (!(this.curLoc.distanceSquaredTo(loc) <= 25)) {
-                simpleBug(loc, false, false);
-            }
-        }
-        
     }
     
     public int roundsUntilInRange(RobotInfo target) {

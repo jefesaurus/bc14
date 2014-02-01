@@ -83,7 +83,7 @@ public class HQRobot extends BaseRobot {
     }
     
     MapLocation currentPastrTarget = null;
-
+    public boolean MILK_ADVANTAGE = true;
     public int SWARM_SIZE = 4;
     public int WINNING_ADVANTAGE = 6;
     @Override
@@ -116,14 +116,10 @@ public class HQRobot extends BaseRobot {
         //System.out.println("our deaths: " + ourTotalDeaths + " round num: " + Clock.getRoundNum());
         //System.out.println("their deaths: " + comms.readKillCount() + " round num: " + Clock.getRoundNum());
         
-        if (ourTotalDeaths + WINNING_ADVANTAGE < comms.readKillCount()) {
+        if (ourTotalDeaths + WINNING_ADVANTAGE < comms.readKillCount() && MILK_ADVANTAGE) {
             WINNING = true;
         } else {
             WINNING = false;
-        }
-        
-        if (Clock.getRoundNum() > 1700) {
-            System.out.println("kill count: " + comms.readKillCount() + "our Deaths: " + ourTotalDeaths);
         }
         
         boolean PASTR_UNDER_ATTACK = comms.checkPastrAlarm();
@@ -139,6 +135,7 @@ public class HQRobot extends BaseRobot {
                 }
                 //System.out.println("Detected pastr at: " + currentPastrTarget.toString());
             } else {
+                MILK_ADVANTAGE = true;
                 MapLocation enemyCentroid;
                 BattleFront existing = comms.getBattle();
                 if (curRound - existing.roundNum < 5) {
@@ -153,8 +150,11 @@ public class HQRobot extends BaseRobot {
                 }
             }
         } else {
-            System.out.println("We're Winning! " + Clock.getRoundNum());
-
+            if (rc.senseTeamMilkQuantity(rc.getTeam()) < rc.senseTeamMilkQuantity(rc.getTeam().opponent()) && currentPastrTarget != null) {
+                MILK_ADVANTAGE = false;
+            } else {
+                MILK_ADVANTAGE = true;
+            }
 
             if (PASTR_UNDER_ATTACK) {
                 Command attackEnemiesAtOurPastr = new Command(CommandType.ATTACK_POINT, bestPastrLoc);
