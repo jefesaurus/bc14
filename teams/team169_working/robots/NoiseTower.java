@@ -154,8 +154,7 @@ public class NoiseTower extends BaseRobot {
     @Override
     public void run() throws GameActionException {
         
-        alertIfEnemySighted();
-
+        //alertIfEnemySighted();
         switch (this.method) {
         case RADIAL:
             break;
@@ -198,6 +197,7 @@ public class NoiseTower extends BaseRobot {
                     int err = dy;
                     while (new MapLocation(x,y).distanceSquaredTo(rc.getLocation()) > FUZZY_BORDER) {
                         while (true) {
+
                             comms.setBuildingStatus(BuildingType.TOWER, new BuildingInfo(Clock.getRoundNum(), BuildingStatus.ALL_GOOD, curLoc));
 
                             if (rc.isActive()) {
@@ -227,7 +227,7 @@ public class NoiseTower extends BaseRobot {
     }
 
     
-    public void setHerdingMethod(HerdingMethod method) {
+    public void setHerdingMethod(HerdingMethod method) throws GameActionException {
         this.method = method;
         switch (method) {
         case RADIAL:
@@ -240,7 +240,7 @@ public class NoiseTower extends BaseRobot {
         }
     }
     
-    private void linearInit() {
+    private void linearInit() throws GameActionException {
         MapLocation[] linearLocs = { 
                       rc.getLocation().add(range,0),
                       rc.getLocation().add(0,range),
@@ -257,7 +257,8 @@ public class NoiseTower extends BaseRobot {
         cleanLinearLocs();
     }
     
-    private void cleanLinearLocs() {
+    private void cleanLinearLocs() throws GameActionException {
+        
 
         for (int i=8; --i>=0;) {
             if (this.linearLocs[i].x < 0) {

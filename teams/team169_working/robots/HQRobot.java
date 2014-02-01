@@ -43,7 +43,8 @@ public class HQRobot extends BaseRobot {
     // Our favored pastr location
     MapLocation bestPastrLoc = null;
 
-    int NumUnitsProduced = 0;
+    double NumUnitsProduced = 0;
+    double DECAY_RATE = .9997;
 
     public HQRobot(RobotController rc) throws GameActionException {
         super(rc);
@@ -108,20 +109,10 @@ public class HQRobot extends BaseRobot {
                 spawnDir = new MapLocation(enemyCentroidX / numEnemySoldiers, enemyCentroidY / numEnemySoldiers).directionTo(this.myHQ);
             }
         }
-
-       /** if (bestPastrLoc == null) {
-            if (!trySpawnPastr()) {
-                return;
-            }
-            calcBestPastrLocation();
-        }
-        if (!isPastrAlive()) {
-            trySpawnPastr();
-        } else if (!isTowerAlive()) {
-            trySpawnTower();
-        } else {**/
+        
+        NumUnitsProduced *= DECAY_RATE;
         currentPastrTarget = getPastrTarget(currentPastrTarget);
-        int ourTotalDeaths = NumUnitsProduced - rc.senseRobotCount();
+        double ourTotalDeaths = NumUnitsProduced - rc.senseRobotCount();
         //System.out.println("our deaths: " + ourTotalDeaths + " round num: " + Clock.getRoundNum());
         //System.out.println("their deaths: " + comms.readKillCount() + " round num: " + Clock.getRoundNum());
         
@@ -131,6 +122,9 @@ public class HQRobot extends BaseRobot {
             WINNING = false;
         }
         
+        if (Clock.getRoundNum() > 1700) {
+            System.out.println("kill count: " + comms.readKillCount() + "our Deaths: " + ourTotalDeaths);
+        }
         
         boolean PASTR_UNDER_ATTACK = comms.checkPastrAlarm();
         
@@ -159,7 +153,7 @@ public class HQRobot extends BaseRobot {
                 }
             }
         } else {
-            //System.out.println("We're Winning! " + Clock.getRoundNum());
+            System.out.println("We're Winning! " + Clock.getRoundNum());
 
 
             if (PASTR_UNDER_ATTACK) {

@@ -8,7 +8,7 @@ public class CowGrowth {
     
     private RobotController rc;
     public double[][] cowGrowth;
-    public static int bigBoxSize = 4;
+    public static int bigBoxSize = 2;
     public double[][] coarseCowGrowth;
     public double[][] finalLocations;
     public final BaseRobot myBot;
@@ -16,8 +16,13 @@ public class CowGrowth {
     public CowGrowth(RobotController rci, BaseRobot myBot){
         rc = rci;
         this.myBot = myBot;
+        int MapSize = rc.getMapWidth() * rc.getMapHeight();
+        if (MapSize > 1000 && MapSize <= 2500) {
+            bigBoxSize = 3;
+        } else if (MapSize > 2500) {
+            bigBoxSize = 4;
+        }
         cowGrowth = rc.senseCowGrowth();
-        //printCoarseMap(cowGrowth);
     }
     
     public  void printCoarseMap(double[][] coarseMap){
